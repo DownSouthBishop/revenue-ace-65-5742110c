@@ -1,17 +1,18 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { Client, CallLog, SmsLog, PhoneNumber, TabId, PageId, AuthMode } from '@/types/respondfall';
 
 const DEMO_NUMBERS: PhoneNumber[] = [
-  { number: '+1 (305) 555-0100', locality: 'Miami, FL', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (305) 555-0147', locality: 'Miami, FL', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (786) 555-0203', locality: 'Miami, FL', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (954) 555-0281', locality: 'Fort Lauderdale, FL', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (561) 555-0334', locality: 'Boca Raton, FL', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (407) 555-0412', locality: 'Orlando, FL', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (213) 555-0501', locality: 'Los Angeles, CA', region: 'CA', price: '$1.15/mo' },
-  { number: '+1 (312) 555-0617', locality: 'Chicago, IL', region: 'IL', price: '$1.15/mo' },
-  { number: '+1 (212) 555-0789', locality: 'New York, NY', region: 'NY', price: '$1.15/mo' },
-  { number: '+1 (713) 555-0832', locality: 'Houston, TX', region: 'TX', price: '$1.15/mo' },
+  { number: '+1 (305) 555-0100', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
+  { number: '+1 (305) 555-0147', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
+  { number: '+1 (786) 555-0203', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
+  { number: '+1 (954) 555-0281', locality: 'Fort Lauderdale', region: 'FL', price: '$1.15/mo' },
+  { number: '+1 (561) 555-0334', locality: 'Boca Raton', region: 'FL', price: '$1.15/mo' },
+  { number: '+1 (407) 555-0412', locality: 'Orlando', region: 'FL', price: '$1.15/mo' },
+  { number: '+1 (213) 555-0501', locality: 'Los Angeles', region: 'CA', price: '$1.15/mo' },
+  { number: '+1 (312) 555-0617', locality: 'Chicago', region: 'IL', price: '$1.15/mo' },
+  { number: '+1 (212) 555-0789', locality: 'New York', region: 'NY', price: '$1.15/mo' },
+  { number: '+1 (713) 555-0832', locality: 'Houston', region: 'TX', price: '$1.15/mo' },
 ];
 
 interface AppState {
@@ -46,7 +47,10 @@ interface AppState {
   tab: TabId;
   setTab: (t: TabId) => void;
   sidebarOpen: boolean;
+  setSidebarOpen: (v: boolean) => void;
   toggleSidebar: () => void;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (v: boolean) => void;
 
   callLogs: CallLog[];
   smsLog: SmsLog[];
@@ -86,9 +90,13 @@ interface AppState {
   phoneResults: PhoneNumber[];
   phoneSearching: boolean;
   searchPhoneNumbers: (query: string) => void;
+
+  // Cached stats (avoid random on re-render)
+  dailyStats: { missed: number; smsSent: number };
+  refreshDailyStats: () => void;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>()((set, get) => ({
   page: 'auth',
   setPage: (p) => set({ page: p }),
 
@@ -117,11 +125,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     { id: 'c2', name: 'South Beach HVAC', business_type: 'hvac', twilio_phone_number: '+1 (786) 555-0203', forward_from_number: '', sms_template: "Hi! South Beach HVAC missed your call — book here: {booking_link}. Reply STOP.", avg_job_value: 450, blackout_start: 21, blackout_end: 8, send_delay_seconds: 3, booking_link: 'https://cal.com/sbhvac', google_review_link: '', is_active: true },
   ],
   activeClientId: 'c1',
-  setActiveClientId: (id) => set({ activeClientId: id, tab: 'activity' }),
+  setActiveClientId: (id) => set({ activeClientId: id, tab: 'activity', mobileMenuOpen: false }),
   tab: 'activity',
   setTab: (t) => set({ tab: t, configSaved: false }),
   sidebarOpen: true,
+  setSidebarOpen: (v) => set({ sidebarOpen: v }),
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+  mobileMenuOpen: false,
+  setMobileMenuOpen: (v) => set({ mobileMenuOpen: v }),
 
   callLogs: [
     { id: 'cl1', caller_number: '+17865550123', call_status: 'no-answer', received_at: new Date(Date.now() - 180000).toISOString(), voicemail: true, voicemail_transcript: "Hi, this is Carlos from Coral Gables. I have a pretty bad leak under my kitchen sink — water's been dripping since this morning. Can someone come out today? It's getting worse. My number is 786-555-0123. Thanks." },
@@ -145,6 +156,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   confirmDel: null,
   setConfirmDel: (v) => set({ confirmDel: v }),
   configSaved: false,
+
+  dailyStats: { missed: 4, smsSent: 9 },
+  refreshDailyStats: () => set({ dailyStats: { missed: Math.floor(Math.random() * 5) + 2, smsSent: Math.floor(Math.random() * 8) + 5 } }),
 
   addClient: (c) => set((s) => ({ clients: [...s.clients, c], activeClientId: c.id, showAddModal: false, tab: 'activity' })),
   deleteClient: (id) => set((s) => {
@@ -183,7 +197,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       voicemail_transcript: hasVmail ? transcripts[Math.floor(Math.random() * transcripts.length)] : null,
     };
 
-    set((s) => ({ callLogs: [newCall, ...s.callLogs] }));
+    set((s) => ({
+      callLogs: [newCall, ...s.callLogs],
+      dailyStats: { ...s.dailyStats, missed: s.dailyStats.missed + 1 },
+    }));
 
     const body = c.sms_template
       .replace(/{business_name}/g, c.name)
@@ -202,7 +219,10 @@ export const useAppStore = create<AppState>((set, get) => ({
         sent_at: new Date().toISOString(),
         step: 1,
       };
-      set((s) => ({ smsLog: [sms, ...s.smsLog] }));
+      set((s) => ({
+        smsLog: [sms, ...s.smsLog],
+        dailyStats: { ...s.dailyStats, smsSent: s.dailyStats.smsSent + 1 },
+      }));
     }, (c.send_delay_seconds || 5) * 200);
   },
 

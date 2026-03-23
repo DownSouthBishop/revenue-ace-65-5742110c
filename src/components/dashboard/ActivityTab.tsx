@@ -21,14 +21,15 @@ export function ActivityTab({ client }: { client: Client }) {
   return (
     <div>
       {/* Sim bar */}
-      <div className="bg-s1 border border-ember rounded-[10px] p-3 px-4 flex items-center justify-between mb-4 gap-2.5" style={{ background: 'linear-gradient(135deg, hsl(var(--surface-1)), hsl(var(--surface-2)))' }}>
+      <div className="bg-s1 border border-ember rounded-[10px] p-3 px-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2.5" style={{ background: 'linear-gradient(135deg, hsl(var(--surface-1)), hsl(var(--surface-2)))' }}>
         <span className="text-xs text-t2 font-mono flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-accent animate-pulse-dot" />
-          Test your Respondfall deployment — simulate a live missed call
+          <span className="w-2 h-2 rounded-full bg-accent animate-pulse-dot flex-shrink-0" />
+          <span className="hidden sm:inline">Test your Respondfall deployment — simulate a live missed call</span>
+          <span className="sm:hidden">Simulate a missed call</span>
         </span>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <button className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-1.5 px-3 cursor-pointer text-[11px] font-mono flex items-center gap-1 hover:bg-[hsl(var(--destructive)/0.15)] transition-all" onClick={() => setConfirmDel({ type: 'activity', id: 'all', label: 'all activity' })}>
-            🗑 Clear All
+            🗑 Clear
           </button>
           <button className="gradient-ember text-primary-foreground border-none rounded-lg py-2 px-4 font-display text-xs font-bold tracking-[.06em] uppercase cursor-pointer glow-ember hover:-translate-y-px transition-all active:scale-[0.98]" onClick={simulateCall}>
             ⚡ SIMULATE
@@ -54,7 +55,7 @@ export function ActivityTab({ client }: { client: Client }) {
           const icon = isSms ? (isReview ? '⭐' : isAi ? '🤖' : step === 2 ? '🔄' : step === 3 ? '⏰' : '💬') : '📵';
 
           const stepLabel = isSms
-            ? isReview ? 'Review Request' : step === 1 ? 'Step 1 · Initial' : step === 2 ? 'Step 2 · Follow-up' : step === 3 ? 'Step 3 · Final' : isAi ? '✦ AI Reply' : step === 'manual' ? 'Manual Reply' : 'SMS'
+            ? isReview ? 'Review' : step === 1 ? 'Step 1' : step === 2 ? 'Step 2' : step === 3 ? 'Step 3' : isAi ? '✦ AI' : step === 'manual' ? 'Manual' : 'SMS'
             : '';
 
           const isCall = item._t === 'call';
@@ -62,34 +63,33 @@ export function ActivityTab({ client }: { client: Client }) {
           const vmId = `vm-${item.id}`;
 
           return (
-            <div key={item.id} className="bg-s1 border border-blue rounded-[10px] p-3 px-4 grid grid-cols-[38px_1fr_auto] gap-3 items-start animate-fade-up mb-2 hover:border-blue-2 transition-colors">
-              <div className={`w-[38px] h-[38px] rounded-lg flex items-center justify-center text-[17px] flex-shrink-0 mt-0.5 border ${iconClass}`}>
+            <div key={item.id} className="bg-s1 border border-blue rounded-[10px] p-3 px-3 sm:px-4 grid grid-cols-[32px_1fr_auto] sm:grid-cols-[38px_1fr_auto] gap-2 sm:gap-3 items-start animate-fade-up mb-2 hover:border-blue-2 transition-colors">
+              <div className={`w-8 h-8 sm:w-[38px] sm:h-[38px] rounded-lg flex items-center justify-center text-[15px] sm:text-[17px] flex-shrink-0 mt-0.5 border ${iconClass}`}>
                 {icon}
               </div>
               <div className="min-w-0">
-                <div className="font-mono text-[13px] font-medium text-foreground mb-0.5">
+                <div className="font-mono text-[12px] sm:text-[13px] font-medium text-foreground mb-0.5 truncate">
                   {isSms ? (item as any).to_number : (item as any).caller_number}
                 </div>
-                <div className="text-[11px] text-t2 leading-relaxed">
+                <div className="text-[11px] text-t2 leading-relaxed line-clamp-2">
                   {isSms ? (
                     <>
                       {stepLabel && <span className={`font-semibold ${isReview ? 'text-gold' : isAi ? 'text-purple-brand' : 'text-sky'}`}>[{stepLabel}]</span>}{' '}
                       {(item as any).body}
                     </>
                   ) : (
-                    `Missed call (${(item as any).call_status}) · 3-touch sequence triggered`
+                    `Missed call (${(item as any).call_status}) · sequence triggered`
                   )}
                 </div>
                 {hasVmail && (
                   <div className="mt-2 bg-3 border border-purple/30 rounded-lg overflow-hidden">
                     <div className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-purple-bg/50 transition-colors" onClick={() => toggleVmail(vmId)}>
-                      <span className="text-[11px] font-mono text-purple-brand tracking-[.06em] flex items-center gap-1.5">🎙 Voicemail Transcript</span>
-                      <span className="text-[10px] font-mono text-t3 ml-auto">~0:{Math.floor(Math.random() * 20 + 10)}</span>
-                      <span className="text-[10px] text-t3">{vmailOpen[vmId] ? '▲' : '▼'}</span>
+                      <span className="text-[11px] font-mono text-purple-brand tracking-[.06em] flex items-center gap-1.5">🎙 Voicemail</span>
+                      <span className="text-[10px] text-t3 ml-auto">{vmailOpen[vmId] ? '▲' : '▼'}</span>
                     </div>
                     {vmailOpen[vmId] && (
                       <div className="px-3 py-2.5 border-t border-purple/20">
-                        <div className="text-[9px] font-mono text-purple-brand uppercase tracking-[.1em] mb-1.5">AI Transcript · Whisper</div>
+                        <div className="text-[9px] font-mono text-purple-brand uppercase tracking-[.1em] mb-1.5">AI Transcript</div>
                         <div className="italic text-foreground text-xs leading-relaxed border-l-2 border-purple-brand/50 pl-2.5">
                           {(item as any).voicemail_transcript}
                         </div>
@@ -99,8 +99,8 @@ export function ActivityTab({ client }: { client: Client }) {
                 )}
               </div>
               <div className="flex flex-col items-end gap-1">
-                <div className="font-mono text-[10px] text-t3 whitespace-nowrap">{formatTime(item._ts)}</div>
-                <span className={`text-[10px] font-semibold font-mono px-2 py-0.5 rounded border ${
+                <div className="font-mono text-[9px] sm:text-[10px] text-t3 whitespace-nowrap">{formatTime(item._ts)}</div>
+                <span className={`text-[9px] sm:text-[10px] font-semibold font-mono px-1.5 sm:px-2 py-0.5 rounded border ${
                   isSms
                     ? isReview ? 'bg-gold-bg text-gold border-gold' : isAi ? 'bg-purple-bg text-purple-brand border-purple' : 'bg-success-bg text-success border-success'
                     : 'bg-[hsl(var(--destructive)/0.08)] text-destructive border-destructive/20'
@@ -108,7 +108,7 @@ export function ActivityTab({ client }: { client: Client }) {
                   {isSms ? (isReview ? 'REVIEW' : 'SENT') : 'MISSED'}
                 </span>
                 <button
-                  className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-1 px-2.5 cursor-pointer text-[11px] font-mono flex items-center gap-1 hover:bg-[hsl(var(--destructive)/0.15)] transition-all mt-1"
+                  className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-1 px-2 cursor-pointer text-[11px] font-mono flex items-center gap-1 hover:bg-[hsl(var(--destructive)/0.15)] transition-all mt-0.5"
                   onClick={() => setConfirmDel({ type: 'feed-item', id: item.id, label: 'this entry' })}
                 >
                   🗑

@@ -3,7 +3,7 @@ import { useAppStore } from '@/store/appStore';
 import { EagleLogo } from '@/components/EagleLogo';
 
 export default function AuthPage() {
-  const { authMode, setAuthMode, setPage } = useAppStore();
+  const { authMode, setAuthMode, setPage, clients } = useAppStore();
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [name, setName] = useState('');
@@ -11,42 +11,41 @@ export default function AuthPage() {
   const [msg, setMsg] = useState('');
 
   const handleSubmit = () => {
+    if (!email.trim()) return;
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       if (authMode === 'magic') {
         setMsg('Magic link sent! Entering platform...');
-        setTimeout(() => setPage('dashboard'), 1200);
+        setTimeout(() => setPage(clients.length > 0 ? 'dashboard' : 'onboard'), 1200);
         return;
       }
-      setPage('dashboard');
+      setPage(clients.length > 0 ? 'dashboard' : 'onboard');
     }, 900);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
+    <div className="min-h-[100dvh] flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-[440px]">
-        {/* Brand */}
-        <div className="text-center mb-8 animate-fade-up">
+        <div className="text-center mb-6 sm:mb-8 animate-fade-up">
           <div className="flex justify-center mb-3.5">
             <EagleLogo size="lg" />
           </div>
-          <div className="font-display text-[30px] font-bold tracking-[.1em] text-gradient-brand">
+          <div className="font-display text-[26px] sm:text-[30px] font-bold tracking-[.1em] text-gradient-brand">
             RESPOND<span style={{ background: 'linear-gradient(135deg, #1e7fd4, #6ec6ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>FALL</span>
           </div>
+          <div className="text-[10px] font-mono text-t3 tracking-[.1em] uppercase mt-1">Missed Call Revenue Recovery</div>
         </div>
 
-        {/* Card */}
-        <div className="bg-s1 border border-blue rounded-2xl p-7 relative overflow-hidden" style={{ animation: 'fadeUp 0.6s ease 0.1s both' }}>
+        <div className="bg-s1 border border-blue rounded-2xl p-5 sm:p-7 relative overflow-hidden" style={{ animation: 'fadeUp 0.6s ease 0.1s both' }}>
           <div className="absolute top-0 left-0 right-0 h-0.5 gradient-shimmer" />
 
-          {/* Mode toggle */}
           <div className="flex gap-1 mb-5 bg-3 border border-blue rounded-[10px] p-1">
             {(['signin', 'signup', 'magic'] as const).map(mode => (
               <button
                 key={mode}
                 onClick={() => setAuthMode(mode)}
-                className={`flex-1 py-2 rounded-[7px] border-none cursor-pointer font-display text-[13px] font-semibold tracking-[.04em] transition-all duration-200 ${
+                className={`flex-1 py-2 rounded-[7px] border-none cursor-pointer font-display text-[12px] sm:text-[13px] font-semibold tracking-[.04em] transition-all duration-200 ${
                   authMode === mode
                     ? 'gradient-sky text-primary-foreground glow-sky'
                     : 'bg-transparent text-t3'
@@ -57,13 +56,12 @@ export default function AuthPage() {
             ))}
           </div>
 
-          {/* Form */}
           <div className="flex flex-col gap-3.5">
             {authMode === 'signup' && (
               <div>
                 <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Full Name</label>
                 <input
-                  className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--sky-dim))]"
+                  className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--sky-dim))]"
                   placeholder="Your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -73,22 +71,24 @@ export default function AuthPage() {
             <div>
               <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Email</label>
               <input
-                className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--sky-dim))]"
+                className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--sky-dim))]"
                 placeholder="you@company.com"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               />
             </div>
             {authMode !== 'magic' && (
               <div>
                 <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Password</label>
                 <input
-                  className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--sky-dim))]"
+                  className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--sky-dim))]"
                   placeholder="••••••••"
                   type="password"
                   value={pass}
                   onChange={(e) => setPass(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                 />
               </div>
             )}

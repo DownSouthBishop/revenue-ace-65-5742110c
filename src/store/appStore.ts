@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Client, CallLog, SmsLog, PhoneNumber, TabId, PageId, AuthMode } from '@/types/respondfall';
+import type { Client, CallLog, SmsLog, PhoneNumber, TabId, PageId, AuthMode, QualificationFlow, QualReason, Referral } from '@/types/respondfall';
 
 const DEMO_NUMBERS: PhoneNumber[] = [
   { number: '+1 (305) 555-0100', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
@@ -58,6 +58,15 @@ interface AppState {
   reviewsSent: Record<string, boolean>;
   replyTexts: Record<string, string>;
   vmailOpen: Record<string, boolean>;
+
+  // Qualification flows
+  qualFlows: QualificationFlow[];
+  handleCallerReply: (phone: string, text: string) => void;
+
+  // Referrals
+  referrals: Referral[];
+  sendReferralRequest: (phone: string) => void;
+  storeReferralResponse: (phone: string, name: string, referredPhone?: string) => void;
 
   // Modals
   showAddModal: boolean;
@@ -151,6 +160,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
   reviewsSent: {},
   replyTexts: {},
   vmailOpen: {},
+  qualFlows: [],
+  referrals: [],
+
   showAddModal: false,
   setShowAddModal: (v) => set({ showAddModal: v }),
   confirmDel: null,
@@ -202,6 +214,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       dailyStats: { ...s.dailyStats, missed: s.dailyStats.missed + 1 },
     }));
 
+    // Step 1: Initial auto-response
     const body = c.sms_template
       .replace(/{business_name}/g, c.name)
       .replace(/{caller_number}/g, from)
@@ -223,7 +236,210 @@ export const useAppStore = create<AppState>()((set, get) => ({
         smsLog: [sms, ...s.smsLog],
         dailyStats: { ...s.dailyStats, smsSent: s.dailyStats.smsSent + 1 },
       }));
+
+      // Step 2: Qualification prompt after auto-response
+      setTimeout(() => {
+        const qualSms: SmsLog = {
+          id: 's' + Date.now(),
+          direction: 'outbound',
+          from_number: c.twilio_phone_number,
+          to_number: from,
+          body: `Quick question — what can we help with?\n\nReply with a number:\n1️⃣ Get a Quote\n2️⃣ Schedule Service\n3️⃣ Ask a Question`,
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          step: 'qual',
+        };
+        const newFlow: QualificationFlow = {
+          phone: from,
+          stage: 'awaiting_reason',
+          answers: [],
+          startedAt: new Date().toISOString(),
+        };
+        set((s) => ({
+          smsLog: [...s.smsLog, qualSms],
+          qualFlows: [...s.qualFlows.filter(q => q.phone !== from), newFlow],
+        }));
+
+        // Simulate caller responding with a reason
+        setTimeout(() => {
+          const pick = (['1', '2', '3'] as const)[Math.floor(Math.random() * 3)];
+          const reasonMap: Record<string, QualReason> = { '1': 'quote', '2': 'service', '3': 'question' };
+          const reason = reasonMap[pick];
+          const replyBody = pick === '1' ? "1" : pick === '2' ? "2" : "3";
+          const callerReply: SmsLog = {
+            id: 's' + Date.now(),
+            direction: 'inbound',
+            from_number: from,
+            to_number: c.twilio_phone_number,
+            body: replyBody,
+            status: 'received',
+            sent_at: new Date().toISOString(),
+            intent: reason,
+          };
+          set((s) => ({ smsLog: [...s.smsLog, callerReply] }));
+          get().handleCallerReply(from, replyBody);
+        }, 3000);
+      }, 2000);
     }, (c.send_delay_seconds || 5) * 200);
+  },
+
+  handleCallerReply: (phone: string, text: string) => {
+    const c = get().getActiveClient();
+    const flow = get().qualFlows.find(q => q.phone === phone);
+    if (!flow) return;
+
+    const t = text.trim().toLowerCase();
+
+    if (flow.stage === 'awaiting_reason') {
+      let reason: QualReason = 'question';
+      if (t === '1' || t.includes('quote')) reason = 'quote';
+      else if (t === '2' || t.includes('service') || t.includes('schedule')) reason = 'service';
+
+      const followUp: Record<QualReason, string> = {
+        quote: `Got it — we'll prepare a quote! What type of work do you need? (e.g., leak repair, remodel, installation)`,
+        service: `We'd love to get you scheduled. What day/time works best this week?`,
+        question: `Sure! Go ahead and type your question — we'll get back to you shortly.`,
+      };
+
+      const sms: SmsLog = {
+        id: 's' + Date.now(),
+        direction: 'outbound',
+        from_number: c.twilio_phone_number,
+        to_number: phone,
+        body: followUp[reason],
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        step: 'qual',
+      };
+
+      set((s) => ({
+        smsLog: [...s.smsLog, sms],
+        qualFlows: s.qualFlows.map(q =>
+          q.phone === phone ? { ...q, stage: 'follow_up_1' as const, reason, answers: [...q.answers, text] } : q
+        ),
+      }));
+
+      // Simulate follow-up response
+      setTimeout(() => {
+        const responses: Record<QualReason, string[]> = {
+          quote: ["Kitchen sink leak — water damage starting under the cabinet", "Full bathroom remodel, two bathrooms", "Water heater replacement, current one is 15 years old"],
+          service: ["Thursday afternoon works great", "Tomorrow morning if possible, before 10am", "Any day this week after 2pm"],
+          question: ["Do you offer free estimates?", "What's your hourly rate for emergency calls?", "Are you licensed and insured?"],
+        };
+        const resp = responses[reason][Math.floor(Math.random() * responses[reason].length)];
+        const reply: SmsLog = {
+          id: 's' + Date.now(),
+          direction: 'inbound',
+          from_number: phone,
+          to_number: c.twilio_phone_number,
+          body: resp,
+          status: 'received',
+          sent_at: new Date().toISOString(),
+          intent: reason,
+        };
+        set((s) => ({ smsLog: [...s.smsLog, reply] }));
+
+        // Route based on reason
+        setTimeout(() => {
+          let routeMsg = '';
+          let routedTo: 'booking' | 'owner_notify' = 'booking';
+
+          if (reason === 'quote' || reason === 'service') {
+            routeMsg = `Perfect, thanks for that info! Here's our booking link — pick whatever time works: ${c.booking_link || 'https://cal.com/yourbiz'}\n\nWe'll have a tech ready for you. 🔧`;
+            routedTo = 'booking';
+          } else {
+            routeMsg = `Great question! We're forwarding this to our team — someone will text you back within 30 minutes. Thanks for your patience!`;
+            routedTo = 'owner_notify';
+          }
+
+          const routeSms: SmsLog = {
+            id: 's' + Date.now(),
+            direction: 'outbound',
+            from_number: c.twilio_phone_number,
+            to_number: phone,
+            body: routeMsg,
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            step: 'qual',
+          };
+
+          set((s) => ({
+            smsLog: [...s.smsLog, routeSms],
+            qualFlows: s.qualFlows.map(q =>
+              q.phone === phone
+                ? { ...q, stage: 'routed' as const, routedTo, answers: [...q.answers, resp], completedAt: new Date().toISOString() }
+                : q
+            ),
+          }));
+        }, 1500);
+      }, 2500);
+    }
+  },
+
+  sendReferralRequest: (phone: string) => {
+    const c = get().getActiveClient();
+    const sms: SmsLog = {
+      id: 's' + Date.now(),
+      direction: 'outbound',
+      from_number: c.twilio_phone_number,
+      to_number: phone,
+      body: `Glad we could help! 🙌 Know someone who could use our services? Reply with their name and we'll reach out — plus you'll get a referral reward!\n\nJust reply: [Name] [Phone]`,
+      status: 'sent',
+      sent_at: new Date().toISOString(),
+      step: 'referral',
+    };
+    set((s) => ({
+      smsLog: [...s.smsLog, sms],
+    }));
+
+    // Simulate referral response
+    setTimeout(() => {
+      const names = ['Maria Garcia', 'James Wilson', 'Diana Reyes', 'Robert Chen'];
+      const phones = ['+17865550901', '+13055550822', '+17865550733', '+13055550644'];
+      const idx = Math.floor(Math.random() * names.length);
+      const reply: SmsLog = {
+        id: 's' + Date.now(),
+        direction: 'inbound',
+        from_number: phone,
+        to_number: c.twilio_phone_number,
+        body: `${names[idx]} ${phones[idx]}`,
+        status: 'received',
+        sent_at: new Date().toISOString(),
+        intent: 'referral',
+      };
+      set((s) => ({ smsLog: [...s.smsLog, reply] }));
+      get().storeReferralResponse(phone, names[idx], phones[idx]);
+    }, 3000);
+  },
+
+  storeReferralResponse: (phone: string, name: string, referredPhone?: string) => {
+    const code = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const c = get().getActiveClient();
+    const referral: Referral = {
+      id: 'ref' + Date.now(),
+      phone,
+      referredName: name,
+      referredPhone: referredPhone,
+      trackingCode: code,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+
+    const confirmSms: SmsLog = {
+      id: 's' + Date.now(),
+      direction: 'outbound',
+      from_number: c.twilio_phone_number,
+      to_number: phone,
+      body: `Thanks! We'll reach out to ${name}. Your referral code is ${code} — we'll let you know when they book! 🎉`,
+      status: 'sent',
+      sent_at: new Date().toISOString(),
+      step: 'referral',
+    };
+
+    set((s) => ({
+      referrals: [...s.referrals, referral],
+      smsLog: [...s.smsLog, confirmSms],
+    }));
   },
 
   sendReply: (phone, text) => {
@@ -243,6 +459,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
       smsLog: [...s.smsLog, sms],
       replyTexts: { ...s.replyTexts, [phone]: '' },
     }));
+
+    // Check if this is a reply to a qualification flow
+    const flow = get().qualFlows.find(q => q.phone === phone && q.stage !== 'routed');
+    if (flow) {
+      get().handleCallerReply(phone, text.trim());
+      return;
+    }
 
     setTimeout(() => {
       const rs = ["Got it! What time works best for a callback?", "Thanks — we'll call within the hour.", "Perfect, you're logged in. Our dispatcher will be in touch."];
@@ -291,13 +514,14 @@ export const useAppStore = create<AppState>()((set, get) => ({
     callLogs: s.callLogs.filter(c => c.id !== id),
     smsLog: s.smsLog.filter(sm => sm.id !== id),
   })),
-  clearAllActivity: () => set({ callLogs: [], smsLog: [], reviewsSent: {} }),
+  clearAllActivity: () => set({ callLogs: [], smsLog: [], reviewsSent: {}, qualFlows: [], referrals: [] }),
   deleteConversation: (phone) => set((s) => ({
     smsLog: s.smsLog.filter(m => m.from_number !== phone && m.to_number !== phone),
     reviewsSent: { ...s.reviewsSent, [phone]: false },
     replyTexts: { ...s.replyTexts, [phone]: '' },
+    qualFlows: s.qualFlows.filter(q => q.phone !== phone),
   })),
-  clearAllInbox: () => set({ smsLog: [], reviewsSent: {}, replyTexts: {} }),
+  clearAllInbox: () => set({ smsLog: [], reviewsSent: {}, replyTexts: {}, qualFlows: [], referrals: [] }),
   executeDel: () => {
     const d = get().confirmDel;
     if (!d) return;

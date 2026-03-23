@@ -42,6 +42,29 @@ export interface PhoneNumber {
   price: string;
 }
 
+export type QualReason = 'quote' | 'service' | 'question';
+export type QualStage = 'awaiting_reason' | 'follow_up_1' | 'follow_up_2' | 'qualified' | 'routed';
+
+export interface QualificationFlow {
+  phone: string;
+  stage: QualStage;
+  reason?: QualReason;
+  answers: string[];
+  routedTo?: 'booking' | 'owner_notify';
+  startedAt: string;
+  completedAt?: string;
+}
+
+export interface Referral {
+  id: string;
+  phone: string;
+  referredName: string;
+  referredPhone?: string;
+  trackingCode: string;
+  status: 'pending' | 'contacted' | 'converted';
+  createdAt: string;
+}
+
 export interface Conversation {
   phone: string;
   messages: SmsLog[];

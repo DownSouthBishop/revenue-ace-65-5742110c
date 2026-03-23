@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Client, CallLog, SmsLog, PhoneNumber, TabId, PageId, AuthMode } from '@/types/respondfall';
+import type { Client, CallLog, SmsLog, PhoneNumber, TabId, PageId, AuthMode, QualificationFlow, QualReason, Referral } from '@/types/respondfall';
 
 const DEMO_NUMBERS: PhoneNumber[] = [
   { number: '+1 (305) 555-0100', locality: 'Miami', region: 'FL', price: '$1.15/mo' },

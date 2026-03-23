@@ -50,12 +50,12 @@ export function ActivityTab({ client }: { client: Client }) {
           const isAi = step === 'ai';
 
           const iconClass = isSms
-            ? isReview ? 'bg-gold-bg border-gold' : isAi ? 'bg-purple-bg border-purple' : 'bg-success-bg border-success'
+            ? isReview ? 'bg-gold-bg border-gold' : isAi ? 'bg-purple-bg border-purple' : step === 'qual' ? 'bg-amber-500/10 border-amber-500/30' : step === 'referral' ? 'bg-purple-bg border-purple' : 'bg-success-bg border-success'
             : 'bg-[hsl(var(--destructive)/0.08)] border-destructive/20';
-          const icon = isSms ? (isReview ? '⭐' : isAi ? '🤖' : step === 2 ? '🔄' : step === 3 ? '⏰' : '💬') : '📵';
+          const icon = isSms ? (isReview ? '⭐' : isAi ? '🤖' : step === 'qual' ? '✦' : step === 'referral' ? '🤝' : step === 2 ? '🔄' : step === 3 ? '⏰' : '💬') : '📵';
 
           const stepLabel = isSms
-            ? isReview ? 'Review' : step === 1 ? 'Step 1' : step === 2 ? 'Step 2' : step === 3 ? 'Step 3' : isAi ? '✦ AI' : step === 'manual' ? 'Manual' : 'SMS'
+            ? isReview ? 'Review' : step === 1 ? 'Step 1' : step === 2 ? 'Step 2' : step === 3 ? 'Step 3' : isAi ? '✦ AI' : step === 'manual' ? 'Manual' : step === 'qual' ? 'Qualify' : step === 'referral' ? 'Referral' : 'SMS'
             : '';
 
           const isCall = item._t === 'call';

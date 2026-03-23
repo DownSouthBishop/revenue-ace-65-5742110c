@@ -102,10 +102,10 @@ export function ActivityTab({ client }: { client: Client }) {
                 <div className="font-mono text-[9px] sm:text-[10px] text-t3 whitespace-nowrap">{formatTime(item._ts)}</div>
                 <span className={`text-[9px] sm:text-[10px] font-semibold font-mono px-1.5 sm:px-2 py-0.5 rounded border ${
                   isSms
-                    ? isReview ? 'bg-gold-bg text-gold border-gold' : isAi ? 'bg-purple-bg text-purple-brand border-purple' : 'bg-success-bg text-success border-success'
+                    ? isReview ? 'bg-gold-bg text-gold border-gold' : isAi ? 'bg-purple-bg text-purple-brand border-purple' : step === 'qual' ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' : step === 'referral' ? 'bg-purple-bg text-purple-brand border-purple' : 'bg-success-bg text-success border-success'
                     : 'bg-[hsl(var(--destructive)/0.08)] text-destructive border-destructive/20'
                 }`}>
-                  {isSms ? (isReview ? 'REVIEW' : 'SENT') : 'MISSED'}
+                  {isSms ? (isReview ? 'REVIEW' : step === 'qual' ? 'QUALIFY' : step === 'referral' ? 'REFERRAL' : 'SENT') : 'MISSED'}
                 </span>
                 <button
                   className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-1 px-2 cursor-pointer text-[11px] font-mono flex items-center gap-1 hover:bg-[hsl(var(--destructive)/0.15)] transition-all mt-0.5"

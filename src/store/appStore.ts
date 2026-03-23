@@ -59,6 +59,15 @@ interface AppState {
   replyTexts: Record<string, string>;
   vmailOpen: Record<string, boolean>;
 
+  // Qualification flows
+  qualFlows: QualificationFlow[];
+  handleCallerReply: (phone: string, text: string) => void;
+
+  // Referrals
+  referrals: Referral[];
+  sendReferralRequest: (phone: string) => void;
+  storeReferralResponse: (phone: string, name: string, referredPhone?: string) => void;
+
   // Modals
   showAddModal: boolean;
   setShowAddModal: (v: boolean) => void;

@@ -43,7 +43,7 @@ const intentTag = (i: string) => {
 };
 const intentLabel = (i: string) => {
   switch (i) {
-    case 'emergency': return '🚨 EMERGENCY';
+    case 'emergency': return '🚨 URGENT';
     case 'quote': return '💬 QUOTE';
     case 'appointment': return '✓ APPT';
     default: return i.toUpperCase();
@@ -56,10 +56,10 @@ export function InboxTab({ client }: { client: Client }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3.5">
+      <div className="flex items-center justify-between mb-3.5 gap-2">
         <div className="text-xs font-mono text-t3">{convos.length} conversation{convos.length !== 1 ? 's' : ''}</div>
-        <button className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-1.5 px-3 cursor-pointer text-[11px] font-mono flex items-center gap-1 hover:bg-[hsl(var(--destructive)/0.15)] transition-all" onClick={() => setConfirmDel({ type: 'inbox', id: 'all', label: 'all conversations' })}>
-          🗑 Clear All Conversations
+        <button className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-1.5 px-3 cursor-pointer text-[11px] font-mono flex items-center gap-1 hover:bg-[hsl(var(--destructive)/0.15)] transition-all flex-shrink-0" onClick={() => setConfirmDel({ type: 'inbox', id: 'all', label: 'all conversations' })}>
+          🗑 Clear All
         </button>
       </div>
 
@@ -75,17 +75,17 @@ export function InboxTab({ client }: { client: Client }) {
           const rt = replyTexts[cv.phone] || '';
 
           return (
-            <div key={cv.phone} className={`bg-s1 border rounded-xl p-4 mb-3 transition-colors animate-fade-up ${cv.hasInbound ? 'border-ember' : revSent ? 'border-gold' : 'border-blue'}`}>
-              <div className="flex justify-between items-start mb-3.5">
-                <div>
-                  <div className="font-mono text-sm font-medium text-foreground">{cv.phone}</div>
-                  <div className="text-[10px] font-mono text-t3 mt-0.5">{formatDate(cv.lastAt)} · {cv.messages.length} messages</div>
+            <div key={cv.phone} className={`bg-s1 border rounded-xl p-3 sm:p-4 mb-3 transition-colors animate-fade-up ${cv.hasInbound ? 'border-ember' : revSent ? 'border-gold' : 'border-blue'}`}>
+              <div className="flex justify-between items-start mb-3 gap-2">
+                <div className="min-w-0">
+                  <div className="font-mono text-sm font-medium text-foreground truncate">{cv.phone}</div>
+                  <div className="text-[10px] font-mono text-t3 mt-0.5">{formatDate(cv.lastAt)} · {cv.messages.length} msg</div>
                 </div>
-                <div className="flex gap-1.5 items-start">
+                <div className="flex gap-1.5 items-start flex-shrink-0 flex-wrap justify-end">
                   {cv.intents.map(i => (
-                    <span key={i} className={`text-[10px] font-mono px-2 py-0.5 rounded border ${intentTag(i)}`}>{intentLabel(i)}</span>
+                    <span key={i} className={`text-[9px] sm:text-[10px] font-mono px-1.5 sm:px-2 py-0.5 rounded border ${intentTag(i)}`}>{intentLabel(i)}</span>
                   ))}
-                  <button className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-1 px-2.5 cursor-pointer text-[11px] font-mono hover:bg-[hsl(var(--destructive)/0.15)] transition-all" onClick={() => setConfirmDel({ type: 'convo', id: cv.phone, label: `conversation with ${cv.phone}` })}>
+                  <button className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-1 px-2 cursor-pointer text-[11px] font-mono hover:bg-[hsl(var(--destructive)/0.15)] transition-all" onClick={() => setConfirmDel({ type: 'convo', id: cv.phone, label: `conversation with ${cv.phone}` })}>
                     🗑
                   </button>
                 </div>
@@ -94,8 +94,8 @@ export function InboxTab({ client }: { client: Client }) {
               <div className="flex flex-col gap-1.5 mb-3">
                 {cv.messages.slice(-5).map(m => (
                   <div key={m.id} className={`flex ${m.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
-                    <div>
-                      <div className={`max-w-[78%] px-3 py-2 text-xs leading-relaxed ${
+                    <div className="max-w-[85%] sm:max-w-[78%]">
+                      <div className={`px-3 py-2 text-xs leading-relaxed ${
                         m.direction === 'outbound'
                           ? m.step === 'review'
                             ? 'bg-gold-bg border border-gold rounded-xl rounded-br-sm text-gold'
@@ -108,7 +108,7 @@ export function InboxTab({ client }: { client: Client }) {
                         {formatTime(m.sent_at)}
                         {m.step === 'ai' && ' · ✦ AI'}
                         {m.step === 'manual' && ' · Manual'}
-                        {m.step === 'review' && ' · ⭐ Review Request'}
+                        {m.step === 'review' && ' · ⭐ Review'}
                         {typeof m.step === 'number' && ` · Step ${m.step}`}
                       </div>
                     </div>
@@ -118,7 +118,7 @@ export function InboxTab({ client }: { client: Client }) {
 
               {revSent && (
                 <div className="bg-gold-bg border border-gold rounded-lg px-3 py-2 mt-2 text-xs text-gold flex items-center gap-2" style={{ animation: 'reviewPop 0.4s ease' }}>
-                  ⭐ Review Request Sent
+                  ⭐ Review Request Sent — {client.google_review_link ? 'Link included' : 'Add review link in Settings'}
                 </div>
               )}
 
@@ -130,7 +130,7 @@ export function InboxTab({ client }: { client: Client }) {
                 <>
                   <div className="flex gap-2">
                     <input
-                      className="flex-1 bg-3 border border-blue rounded-lg text-foreground font-body text-xs px-3 py-2 outline-none focus:border-primary transition-colors"
+                      className="flex-1 bg-3 border border-blue rounded-lg text-foreground font-body text-xs px-3 py-2.5 outline-none focus:border-primary transition-colors"
                       placeholder={`Reply as ${client.name}...`}
                       value={rt}
                       onChange={e => setReplyText(cv.phone, e.target.value)}
@@ -141,10 +141,10 @@ export function InboxTab({ client }: { client: Client }) {
                     </button>
                   </div>
                   <div className="flex gap-1.5 mt-2.5 flex-wrap">
-                    <button className="text-[11px] font-mono py-1 px-2.5 rounded-md cursor-pointer border border-blue bg-transparent text-t2 hover:border-gold hover:text-gold hover:bg-gold-bg transition-all flex items-center gap-1" onClick={() => markDone(cv.phone)}>
-                      ⭐ Mark Complete → Send Review Request
+                    <button className="text-[10px] sm:text-[11px] font-mono py-1.5 px-2.5 rounded-md cursor-pointer border border-blue bg-transparent text-t2 hover:border-gold hover:text-gold hover:bg-gold-bg transition-all flex items-center gap-1" onClick={() => markDone(cv.phone)}>
+                      ⭐ Complete → Review Request
                     </button>
-                    <button className="text-[11px] font-mono py-1 px-2.5 rounded-md cursor-pointer border border-blue bg-transparent text-t2 hover:border-ember hover:text-ember hover:bg-ember-dim transition-all flex items-center gap-1" onClick={() => stopSequence(cv.phone)}>
+                    <button className="text-[10px] sm:text-[11px] font-mono py-1.5 px-2.5 rounded-md cursor-pointer border border-blue bg-transparent text-t2 hover:border-ember hover:text-ember hover:bg-ember-dim transition-all flex items-center gap-1" onClick={() => stopSequence(cv.phone)}>
                       ⏹ Stop Sequence
                     </button>
                   </div>

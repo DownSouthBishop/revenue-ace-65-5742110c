@@ -1,7 +1,7 @@
 import type { Client } from '@/types/respondfall';
 
 export function SequencesTab({ client }: { client: Client }) {
-  const steps = [
+  const recoverySteps = [
     {
       num: 1,
       cls: 'gradient-sky border-primary glow-sky',
@@ -10,7 +10,7 @@ export function SequencesTab({ client }: { client: Client }) {
     },
     {
       num: 2,
-      cls: 'bg-[rgba(30,127,212,0.25)] text-sky border-blue-2',
+      cls: 'bg-[hsla(var(--sky-blue),0.25)] text-sky border-blue-2',
       delay: '2 hours later — if no reply',
       msg: `Hey, still hoping to connect — ${client.name} has availability this week. Book anytime: ${client.booking_link || '[link]'}.`,
     },
@@ -22,33 +22,76 @@ export function SequencesTab({ client }: { client: Client }) {
     },
   ];
 
+  const qualSteps = [
+    {
+      num: 'Q1',
+      cls: 'bg-[hsla(var(--sky-blue),0.3)] text-sky border-blue-2',
+      delay: 'Triggers on first inbound reply',
+      msg: `Thanks for reaching out to ${client.name}! To help you faster, what brings you in?\n\n1️⃣ Get a Quote\n2️⃣ Book a Service\n3️⃣ Ask a Question`,
+    },
+    {
+      num: 'Q2',
+      cls: 'bg-[hsla(var(--sky-blue),0.2)] text-sky border-blue-2',
+      delay: 'After reason selected — contextual follow-up',
+      msg: `Great — can you briefly describe what you need? (e.g., "roof repair estimate" or "AC maintenance")`,
+    },
+    {
+      num: '→',
+      cls: 'bg-success-bg text-success border-success',
+      delay: 'After follow-up answered — auto-route',
+      msg: `Got it! Here's your next step:\n• Quote/Service → booking link sent\n• Question → owner notified instantly`,
+    },
+  ];
+
+  const referralSteps = [
+    {
+      num: '🤝',
+      cls: 'bg-[hsla(var(--sky-blue),0.25)] text-sky border-blue-2',
+      delay: '30 min after "Mark Job Complete"',
+      msg: `Thanks for choosing ${client.name}! Know someone who could use our help? Reply with their name and we'll take care of the rest — you're helping them get great service.`,
+    },
+    {
+      num: '📋',
+      cls: 'bg-ember-dim text-ember border-ember',
+      delay: 'After referral name received',
+      msg: `Awesome, thanks! We'll reach out to [Name]. Your unique referral code is REF-XXXXXX — we'll let you know when they book.`,
+    },
+  ];
+
   return (
-    <div>
-      <div className="bg-s1 border border-blue rounded-xl p-5 mb-3.5">
-        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5">
-          <span className="w-[3px] h-4 gradient-indicator rounded-sm" />
-          3-Touch Recovery Sequence
-        </div>
-        <div className="bg-sky-dim border border-blue-2 rounded-lg p-3 text-xs text-t2 mb-4 leading-relaxed border-l-[3px] border-l-primary">
-          Fires automatically for every missed call. Stops the moment they reply or book. <strong className="text-sky">Converts 30–40% of missed calls</strong> into booked appointments.
-        </div>
+    <div className="space-y-3.5">
+      {/* 3-Touch Recovery */}
+      <SequenceCard
+        title="3-Touch Recovery Sequence"
+        description={<>Fires automatically for every missed call. Stops the moment they reply or book. <strong className="text-sky">Converts 30–40% of missed calls</strong> into booked appointments.</>}
+        descCls="bg-sky-dim border-blue-2 border-l-primary"
+        steps={recoverySteps}
+      />
 
-        {steps.map((s, i) => (
-          <div key={s.num}>
-            <div className="grid grid-cols-[28px_1fr] gap-3.5 items-start mb-3.5">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center font-display text-[13px] font-bold flex-shrink-0 border text-primary-foreground ${s.cls}`}>{s.num}</div>
-              <div className="bg-3 border border-blue rounded-lg p-3">
-                <div className="text-[11px] font-mono text-ember mb-1.5 flex items-center gap-1.5">⏱ {s.delay}</div>
-                <div className="text-xs text-t2 leading-relaxed">"{s.msg}"</div>
-              </div>
+      {/* Qualification Layer */}
+      <SequenceCard
+        title="Lead Qualification Layer"
+        description={<>Activates when a caller replies to the recovery sequence. <strong className="text-sky">Categorises intent in 2 messages</strong> then auto-routes to booking or owner notification.</>}
+        descCls="bg-sky-dim border-blue-2 border-l-primary"
+        steps={qualSteps}
+      >
+        <div className="grid grid-cols-3 gap-2 mt-3.5">
+          {[
+            { label: 'Quote', icon: '💰', desc: '→ Booking link' },
+            { label: 'Service', icon: '🔧', desc: '→ Booking link' },
+            { label: 'Question', icon: '❓', desc: '→ Owner alert' },
+          ].map(r => (
+            <div key={r.label} className="bg-3 border border-blue rounded-lg p-2.5 text-center">
+              <div className="text-lg mb-1">{r.icon}</div>
+              <div className="text-[11px] font-display font-bold text-foreground">{r.label}</div>
+              <div className="text-[9px] font-mono text-t3 mt-0.5">{r.desc}</div>
             </div>
-            {i < steps.length - 1 && <div className="w-0.5 h-3.5 gradient-indicator mx-auto opacity-40 mb-1" style={{ marginLeft: '13px' }} />}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </SequenceCard>
 
-      {/* Review sequence */}
-      <div className="bg-s1 border border-blue rounded-xl p-5 mb-3.5">
+      {/* Review Request */}
+      <div className="bg-s1 border border-blue rounded-xl p-5">
         <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5">
           <span className="w-[3px] h-4 gradient-indicator rounded-sm" />
           Post-Job Review Request
@@ -56,7 +99,7 @@ export function SequencesTab({ client }: { client: Client }) {
         {client.google_review_link ? (
           <>
             <div className="bg-ember-dim border border-ember rounded-lg p-3 text-xs text-t2 mb-4 leading-relaxed border-l-[3px] border-l-accent">
-              <strong className="text-ember">The flywheel is active:</strong> Mark a job complete in the Inbox → review request fires 2 hours later → more 5-star reviews → higher Google ranking → more calls to capture.
+              <strong className="text-ember">The flywheel is active:</strong> Mark a job complete → review request fires 2 hours later → more 5-star reviews → higher Google ranking → more calls to capture.
             </div>
             <div className="grid grid-cols-[28px_1fr] gap-3.5 items-start">
               <div className="w-7 h-7 rounded-full flex items-center justify-center font-display text-[13px] font-bold flex-shrink-0 border bg-gold-bg text-gold border-gold">⭐</div>
@@ -73,19 +116,45 @@ export function SequencesTab({ client }: { client: Client }) {
           </>
         ) : (
           <div className="bg-[hsl(var(--warning-bg))] border border-[hsl(var(--warning-border))] rounded-lg p-3 text-xs text-[hsl(var(--warning))] leading-relaxed">
-            Google Review Link is not set. Add it in Settings → Revenue Multipliers to unlock post-job review requests — this is the single highest-ROI feature.
+            Google Review Link is not set. Add it in Settings → Revenue Multipliers to unlock post-job review requests.
           </div>
         )}
       </div>
 
-      {/* Sequence perf */}
+      {/* Referral Automation */}
+      <SequenceCard
+        title="Referral Automation"
+        description={<>Triggers after job completion. <strong className="text-ember">Turns every happy customer into a referral source</strong> with unique tracking codes and automatic outreach.</>}
+        descCls="bg-ember-dim border-ember border-l-accent"
+        steps={referralSteps}
+      >
+        <div className="bg-3 border border-blue rounded-lg p-3 mt-3.5">
+          <div className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] mb-2">Referral Pipeline</div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="px-2 py-1 rounded-md bg-sky-dim border border-blue-2 text-sky font-mono text-[10px]">SMS Sent</span>
+            <span className="text-t4">→</span>
+            <span className="px-2 py-1 rounded-md bg-ember-dim border border-ember text-ember font-mono text-[10px]">Name Captured</span>
+            <span className="text-t4">→</span>
+            <span className="px-2 py-1 rounded-md bg-success-bg border border-success text-success font-mono text-[10px]">Code Issued</span>
+            <span className="text-t4">→</span>
+            <span className="px-2 py-1 rounded-md bg-gold-bg border border-gold text-gold font-mono text-[10px]">Converted</span>
+          </div>
+        </div>
+      </SequenceCard>
+
+      {/* Sequence Performance */}
       <div className="bg-s1 border border-blue rounded-xl p-5">
         <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5">
           <span className="w-[3px] h-4 gradient-indicator rounded-sm" />
           Sequence Performance
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          {[{ l: 'Active Sequences', v: '2', c: 'text-sky' }, { l: 'Step 2 Rate', v: '64%', c: '' }, { l: 'Conversion', v: '38%', c: 'text-success' }].map(s => (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
+          {[
+            { l: 'Active Sequences', v: '4', c: 'text-sky' },
+            { l: 'Qualification Rate', v: '72%', c: 'text-sky' },
+            { l: 'Booking Conversion', v: '38%', c: 'text-success' },
+            { l: 'Referrals Generated', v: '12', c: 'text-ember' },
+          ].map(s => (
             <div key={s.l} className="bg-3 border border-blue rounded-[10px] p-3.5">
               <div className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] mb-2">{s.l}</div>
               <div className={`font-display text-[26px] font-bold ${s.c}`}>{s.v}</div>
@@ -93,6 +162,50 @@ export function SequencesTab({ client }: { client: Client }) {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* Reusable sequence card */
+function SequenceCard({
+  title,
+  description,
+  descCls,
+  steps,
+  children,
+}: {
+  title: string;
+  description: React.ReactNode;
+  descCls: string;
+  steps: { num: string | number; cls: string; delay: string; msg: string }[];
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="bg-s1 border border-blue rounded-xl p-5">
+      <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5">
+        <span className="w-[3px] h-4 gradient-indicator rounded-sm" />
+        {title}
+      </div>
+      <div className={`rounded-lg p-3 text-xs text-t2 mb-4 leading-relaxed border border-l-[3px] ${descCls}`}>
+        {description}
+      </div>
+      {steps.map((s, i) => (
+        <div key={i}>
+          <div className="grid grid-cols-[28px_1fr] gap-3.5 items-start mb-3.5">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-display text-[13px] font-bold flex-shrink-0 border ${s.cls}`}>
+              {s.num}
+            </div>
+            <div className="bg-3 border border-blue rounded-lg p-3">
+              <div className="text-[11px] font-mono text-ember mb-1.5 flex items-center gap-1.5">⏱ {s.delay}</div>
+              <div className="text-xs text-t2 leading-relaxed whitespace-pre-line">"{s.msg}"</div>
+            </div>
+          </div>
+          {i < steps.length - 1 && (
+            <div className="w-0.5 h-3.5 gradient-indicator mx-auto opacity-40 mb-1" style={{ marginLeft: '13px' }} />
+          )}
+        </div>
+      ))}
+      {children}
     </div>
   );
 }

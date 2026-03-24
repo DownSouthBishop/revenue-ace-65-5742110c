@@ -63,19 +63,20 @@ export function Inbox({ client }: Props) {
     }
     setMarkingDone(phone)
     const msg = `Thanks for choosing ${client.name}! If we did a great job today, a quick Google review means the world to us: ${client.google_review_link}`
-    await supabase.from('sms_log').insert({
-      client_id: client.id,
-      direction: 'outbound',
-      from_number: client.twilio_phone_number,
-      to_number: phone,
-      body: msg,
-      status: 'sent',
-      sequence_step: 'review',
-    })
-    // Invoke review-request Edge Function for 2hr delayed follow-up
-    await supabase.functions.invoke('review-request', {
-      body: { clientId: client.id, phoneNumber: phone },
-    }).catch(() => {})
+    const reviewSms: SMSMessage = {
+      id: 's' + Date.now(), client_id: client.id, direction: 'outbound',
+      from_number: client.twilio_phone_number, to_number: phone, body: msg,
+      status: 'sent', sent_at: new Date().toISOString(), sequence_step: 'review',
+      intent: null, twilio_message_sid: null,
+    }
+    if (isDemoMode) {
+      demoHelpers.addSmsLog(reviewSms)
+    } else {
+      await supabase.from('sms_log').insert(reviewSms)
+      await supabase.functions.invoke('review-request', {
+        body: { clientId: client.id, phoneNumber: phone },
+      }).catch(() => {})
+    }
     markReviewSent(phone)
     setMarkingDone(null)
   }

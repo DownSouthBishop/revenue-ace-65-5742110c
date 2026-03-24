@@ -37,19 +37,20 @@ export function Inbox({ client }: Props) {
     const text = replyTexts[phone]?.trim()
     if (!text) return
     setSending(phone)
-    await supabase.from('sms_log').insert({
-      client_id: client.id,
-      direction: 'outbound',
-      from_number: client.twilio_phone_number,
-      to_number: phone,
-      body: text,
-      status: 'sent',
-      sequence_step: 'manual',
-    })
-    // Also fire real Twilio SMS via Edge Function
-    await supabase.functions.invoke('send-manual-sms', {
-      body: { clientId: client.id, toNumber: phone, body: text },
-    }).catch(() => {}) // don't block UI if function not deployed yet
+    const newSms: SMSMessage = {
+      id: 's' + Date.now(), client_id: client.id, direction: 'outbound',
+      from_number: client.twilio_phone_number, to_number: phone, body: text,
+      status: 'sent', sent_at: new Date().toISOString(), sequence_step: 'manual',
+      intent: null, twilio_message_sid: null,
+    }
+    if (isDemoMode) {
+      demoHelpers.addSmsLog(newSms)
+    } else {
+      await supabase.from('sms_log').insert(newSms)
+      await supabase.functions.invoke('send-manual-sms', {
+        body: { clientId: client.id, toNumber: phone, body: text },
+      }).catch(() => {})
+    }
     setReplyText(phone, '')
     setSending(null)
   }

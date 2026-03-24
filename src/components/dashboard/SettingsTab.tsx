@@ -1,137 +1,199 @@
-import { forwardRef, useState } from 'react';
-import { useAppStore } from '@/store/appStore';
-import type { Client } from '@/types/respondfall';
-import { PhonePicker } from '@/components/PhonePicker';
+import React, { useState, useEffect } from 'react'
+import { useAppStore } from '../../stores/app'
+import { PhonePicker } from '../phone/PhonePicker'
+import { BUSINESS_TYPES, SMS_VARIABLES } from '../../constants/brand'
+import type { Client, ClientUpdate } from '../../types'
 
-const INDUSTRIES = ['plumbing', 'hvac', 'electrical', 'roofing', 'landscaping', 'cleaning', 'auto_repair', 'restaurant', 'salon', 'real_estate', 'medical', 'other'];
+interface Props {
+  client: Client
+  onUpdate: (id: string, updates: ClientUpdate) => Promise<Client>
+}
 
-export const SettingsTab = forwardRef<HTMLDivElement, { client: Client }>(
-  function SettingsTab({ client }, ref) {
-    const { updateClient, setConfirmDel } = useAppStore();
-    const [name, setName] = useState(client.name);
-    const [type, setType] = useState(client.business_type);
-    const [jobVal, setJobVal] = useState(client.avg_job_value);
-    const [template, setTemplate] = useState(client.sms_template);
-    const [delay, setDelay] = useState(client.send_delay_seconds);
-    const [bStart, setBStart] = useState(client.blackout_start);
-    const [bEnd, setBEnd] = useState(client.blackout_end);
-    const [bookLink, setBookLink] = useState(client.booking_link);
-    const [reviewLink, setReviewLink] = useState(client.google_review_link);
-    const [fwdNum, setFwdNum] = useState(client.forward_from_number);
-    const [saved, setSaved] = useState(false);
+export function SettingsTab({ client, onUpdate }: Props) {
+  const { configSaved, setConfigSaved, setShowConfirmDelete } = useAppStore()
+  const [form, setForm] = useState({ ...client })
+  const [saving, setSaving] = useState(false)
 
-    const save = () => {
-      updateClient(client.id, {
-        name, business_type: type, avg_job_value: jobVal, sms_template: template,
-        send_delay_seconds: delay, blackout_start: bStart, blackout_end: bEnd,
-        booking_link: bookLink, google_review_link: reviewLink, forward_from_number: fwdNum,
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    };
+  useEffect(() => { setForm({ ...client }) }, [client.id])
 
-    const handlePhoneChange = (num: string) => {
-      updateClient(client.id, { twilio_phone_number: num });
-    };
+  const set = (k: keyof typeof form, v: any) => setForm(f => ({ ...f, [k]: v }))
 
-    return (
-      <div ref={ref}>
-        <div className="bg-s1 border border-blue rounded-xl p-5 mb-3.5">
-          <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Business Profile</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div className="sm:col-span-2">
-              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Business Name</label>
-              <input className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={name} onChange={e => setName(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Industry</label>
-              <select className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none cursor-pointer" value={type} onChange={e => setType(e.target.value)}>
-                {INDUSTRIES.map(t => <option key={t}>{t.replace(/_/g, ' ')}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Avg Job Value ($)</label>
-              <input type="number" className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={jobVal} onChange={e => setJobVal(parseInt(e.target.value) || 0)} />
-            </div>
+  const save = async () => {
+    setSaving(true)
+    await onUpdate(client.id, {
+      name: form.name,
+      business_type: form.business_type,
+      avg_job_value: Number(form.avg_job_value),
+      sms_template: form.sms_template,
+      send_delay_seconds: Number(form.send_delay_seconds),
+      blackout_start: Number(form.blackout_start),
+      blackout_end: Number(form.blackout_end),
+      booking_link: form.booking_link || null,
+      google_review_link: form.google_review_link || null,
+    })
+    setConfigSaved(true)
+    setSaving(false)
+    setTimeout(() => setConfigSaved(false), 3000)
+  }
+
+  const charCount = form.sms_template?.length || 0
+
+  return (
+    <div>
+      {/* Business profile */}
+      <div className="sf-card mb-3.5">
+        <div className="sf-card-title">Business Profile</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div style={{ gridColumn: '1 / -1' }} className="flex flex-col gap-1.5">
+            <label className="sf-label">Business Name</label>
+            <input className="sf-input" value={form.name || ''} onChange={e => set('name', e.target.value)} />
           </div>
-        </div>
-
-        <div className="bg-s1 border border-blue rounded-xl p-5 mb-3.5">
-          <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Phone Numbers</div>
-          <div className="mb-3.5">
-            <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Current Respondfall Number</label>
-            <div className="font-mono text-base font-semibold text-success p-2.5 px-3 bg-3 border border-success rounded-lg">{client.twilio_phone_number}</div>
+          <div className="flex flex-col gap-1.5">
+            <label className="sf-label">Industry</label>
+            <select className="sf-input" value={form.business_type} onChange={e => set('business_type', e.target.value as any)}>
+              {BUSINESS_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
           </div>
-          <div className="mb-3.5">
-            <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Your Business Number <span className="text-t3">(calls forward from here)</span></label>
-            <input
-              className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none focus:border-primary"
-              value={fwdNum}
-              onChange={e => setFwdNum(e.target.value)}
-              placeholder="+1 (555) 000-0000"
-            />
-            <div className="text-[11px] text-t3 font-mono mt-1">Enter the number your customers call. Missed calls will forward to your Respondfall number above.</div>
+          <div className="flex flex-col gap-1.5">
+            <label className="sf-label">Avg Job Value ($)</label>
+            <input className="sf-input" type="number" value={form.avg_job_value} onChange={e => set('avg_job_value', e.target.value)} />
           </div>
-          <div className="bg-sky-dim border border-blue-2 rounded-lg p-3 text-xs text-t2 mb-3.5 leading-relaxed border-l-[3px] border-l-primary">To change your Respondfall number, search and claim a new one below.</div>
-          <PhonePicker onSelect={handlePhoneChange} selected={client.twilio_phone_number} />
-        </div>
-
-        <div className="bg-s1 border border-blue rounded-xl p-5 mb-3.5">
-          <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />SMS Configuration</div>
-          <div className="flex flex-col gap-3.5">
-            <div>
-              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Initial SMS Template</label>
-              <textarea className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none focus:border-primary min-h-[78px] resize-y" value={template} onChange={e => setTemplate(e.target.value)} />
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Send Delay (s)</label>
-                <input type="number" min={0} max={60} className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={delay} onChange={e => setDelay(parseInt(e.target.value) || 0)} />
-              </div>
-              <div>
-                <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Blackout Start</label>
-                <input type="number" min={0} max={23} className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={bStart} onChange={e => setBStart(parseInt(e.target.value) || 0)} />
-              </div>
-              <div>
-                <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Blackout End</label>
-                <input type="number" min={0} max={23} className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={bEnd} onChange={e => setBEnd(parseInt(e.target.value) || 0)} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-s1 border border-blue rounded-xl p-5 mb-3.5">
-          <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Revenue Multipliers</div>
-          <div className="flex flex-col gap-3.5">
-            <div>
-              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Booking Link <span className="text-ember">★ Critical</span></label>
-              <input className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={bookLink} onChange={e => setBookLink(e.target.value)} placeholder="https://cal.com/yourbusiness" />
-            </div>
-            <div>
-              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Google Review Link <span className="text-gold">★ Post-job review requests</span></label>
-              <input className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={reviewLink} onChange={e => setReviewLink(e.target.value)} placeholder="https://g.page/r/.../review" />
-              {!reviewLink && (
-                <div className="bg-[hsl(var(--warning-bg))] border border-[hsl(var(--warning-border))] rounded-lg p-2.5 text-xs text-[hsl(var(--warning))] mt-2 leading-relaxed">
-                  Without this, post-job review requests are disabled. Add your Google review link to unlock.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-s1 border border-blue rounded-xl p-5 mb-3.5">
-          <div className="font-display text-base font-bold tracking-[.05em] mb-4 text-destructive flex items-center gap-2.5"><span className="w-[3px] h-4 bg-destructive rounded-sm" />Danger Zone</div>
-          <div className="text-[13px] text-t2 mb-3.5">Permanently remove this client and all associated data. This cannot be undone.</div>
-          <button className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-2 px-4 cursor-pointer text-[13px] font-mono flex items-center gap-1.5 hover:bg-[hsl(var(--destructive)/0.15)] transition-all" onClick={() => setConfirmDel({ type: 'client', id: client.id, label: client.name })}>
-            🗑 Delete Client
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3.5">
-          <button className="gradient-sky text-primary-foreground border-none rounded-lg py-2.5 px-6 font-display text-sm font-bold tracking-[.06em] uppercase cursor-pointer glow-sky hover:-translate-y-px transition-all active:scale-[0.98]" onClick={save}>SAVE CHANGES</button>
-          {saved && <div className="text-xs font-mono text-success flex items-center gap-1">✓ Configuration saved</div>}
         </div>
       </div>
-    );
-  }
-);
+
+      {/* Phone number */}
+      <div className="sf-card mb-3.5">
+        <div className="sf-card-title">Respondfall Phone Number</div>
+        <div className="flex items-center justify-between rounded-xl mb-3.5" style={{ background: 'var(--bg3)', border: '1px solid var(--okb)', padding: '14px 18px' }}>
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono'", fontSize: 18, fontWeight: 600, color: 'var(--ok)' }}>
+              {client.twilio_phone_number || 'No number provisioned'}
+            </div>
+            <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono'", color: '#4a6080', marginTop: 3 }}>
+              SkyforgeAI Infrastructure · Managed for you
+            </div>
+          </div>
+          <button onClick={() => navigator.clipboard.writeText(client.twilio_phone_number || '')}
+            className="sf-url-copy" style={{ padding: '8px 14px' }}>Copy</button>
+        </div>
+        <div className="sf-alert sf-alert-tip">To change your number, search below and claim a replacement. Takes effect immediately.</div>
+        <PhonePicker
+          selectedNumber={client.twilio_phone_number}
+          onSelect={n => set('twilio_phone_number', n.number)}
+        />
+      </div>
+
+      {/* SMS config */}
+      <div className="sf-card mb-3.5">
+        <div className="sf-card-title">SMS Configuration</div>
+        <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <label className="sf-label" style={{ marginBottom: 0 }}>Initial SMS Template</label>
+              <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono'", color: charCount > 160 ? 'var(--err)' : '#4a6080' }}>
+                {charCount}/160
+              </span>
+            </div>
+            <textarea
+              className="sf-input"
+              style={{ minHeight: 80, lineHeight: 1.6 }}
+              value={form.sms_template || ''}
+              onChange={e => set('sms_template', e.target.value)}
+            />
+            <div className="flex gap-1.5 flex-wrap mt-1">
+              {SMS_VARIABLES.map(v => (
+                <span
+                  key={v.label}
+                  className="vchip"
+                  style={{ fontSize: 11, fontFamily: "'JetBrains Mono'", background: 'var(--bluedim)', color: 'var(--blue)', border: '1px solid var(--b2)', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}
+                  onClick={() => set('sms_template', (form.sms_template || '') + v.label)}
+                >
+                  {v.label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="flex flex-col gap-1.5">
+              <label className="sf-label">Send Delay (seconds)</label>
+              <input className="sf-input" type="number" min="0" max="60" value={form.send_delay_seconds} onChange={e => set('send_delay_seconds', e.target.value)} />
+            </div>
+            <div />
+            <div className="flex flex-col gap-1.5">
+              <label className="sf-label">Blackout Start (0–23)</label>
+              <input className="sf-input" type="number" min="0" max="23" value={form.blackout_start} onChange={e => set('blackout_start', e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="sf-label">Blackout End (0–23)</label>
+              <input className="sf-input" type="number" min="0" max="23" value={form.blackout_end} onChange={e => set('blackout_end', e.target.value)} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Revenue multipliers */}
+      <div className="sf-card mb-3.5">
+        <div className="sf-card-title">Revenue Multipliers</div>
+        <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-1.5">
+            <label className="sf-label">
+              Booking Link{' '}
+              <span style={{ color: 'var(--ember)' }}>★ Critical for conversion</span>
+            </label>
+            <input
+              className="sf-input"
+              placeholder="https://cal.com/yourbusiness or Calendly link"
+              value={form.booking_link || ''}
+              onChange={e => set('booking_link', e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="sf-label">
+              Google Review Link{' '}
+              <span style={{ color: 'var(--gold)' }}>★ Enables post-job review requests</span>
+            </label>
+            <input
+              className="sf-input"
+              placeholder="https://g.page/r/.../review"
+              value={form.google_review_link || ''}
+              onChange={e => set('google_review_link', e.target.value)}
+            />
+            {!form.google_review_link && (
+              <div className="sf-alert sf-alert-warn" style={{ marginTop: 8, marginBottom: 0 }}>
+                Without this, post-job review requests are disabled. Add your Google review link to unlock the review flywheel.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Danger zone */}
+      <div className="sf-card mb-3.5" style={{ borderColor: 'rgba(232,64,64,.25)' }}>
+        <div className="sf-card-title" style={{ color: 'var(--err)' }}>Danger Zone</div>
+        <div style={{ fontSize: 13, color: '#8fa3be', marginBottom: 14, lineHeight: 1.6 }}>
+          Permanently remove this client and all associated call logs, SMS history, and sequences. This cannot be undone.
+        </div>
+        <button
+          className="sf-btn-danger"
+          style={{ fontSize: 13, padding: '9px 18px' }}
+          onClick={() => setShowConfirmDelete({ type: 'client', id: client.id, label: client.name })}
+        >
+          🗑 Delete Client: {client.name}
+        </button>
+      </div>
+
+      {/* Save */}
+      <div className="flex items-center gap-3.5">
+        <button className="sf-btn-primary" onClick={save} disabled={saving}>
+          {saving ? <span className="animate-spin-slow">◌</span> : null} SAVE CHANGES
+        </button>
+        {configSaved && (
+          <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono'", color: 'var(--ok)', display: 'flex', alignItems: 'center', gap: 5 }}>
+            ✓ Configuration saved
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

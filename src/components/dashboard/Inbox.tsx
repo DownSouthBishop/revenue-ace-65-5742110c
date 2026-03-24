@@ -172,7 +172,7 @@ export function Inbox({ client }: Props) {
                       <div className={bubbleClass(m)}>{m.body}</div>
                       <div style={{ fontSize: 9, fontFamily: "'JetBrains Mono'", color: '#4a6080', marginTop: 3, textAlign: 'right' }}>
                         {fmtTime(m.sent_at)}
-                        {m.sequence_step ? ` · ${stepLabel(m.sequence_step)}` : ''}
+                        {m.sequence_step ? ` · ${stepLabel(String(m.sequence_step))}` : ''}
                       </div>
                     </div>
                   </div>

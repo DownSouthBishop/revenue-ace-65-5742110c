@@ -1,96 +1,152 @@
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss'
+import animate from 'tailwindcss-animate'
 
-export default {
-  darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
-  prefix: "",
+const config: Config = {
+  darkMode: ['class'],
+  content: [
+    './index.html',
+    './src/**/*.{ts,tsx}',
+  ],
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: { "2xl": "1400px" },
-    },
     extend: {
-      fontFamily: {
-        display: ["Rajdhani", "sans-serif"],
-        body: ["Inter", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
-      },
+      // ── SkyforgeAI Brand Colors ──────────────────────────────
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+        // Deep space backgrounds
+        bg: {
+          DEFAULT: '#05070d',
+          2: '#080c14',
+          3: '#0b1020',
         },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+        surface: {
+          DEFAULT: '#0e1525',
+          2: '#121b2e',
+          3: '#162035',
         },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+        // Electric Blue (left wing)
+        sky: {
+          DEFAULT: '#1e7fd4',
+          2: '#0d5aa8',
+          3: '#0a3d7a',
+          glow: 'rgba(30,127,212,0.28)',
+          dim: 'rgba(30,127,212,0.10)',
         },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+        // Ember Orange (right wing)
+        ember: {
+          DEFAULT: '#e8621a',
+          2: '#c44810',
+          glow: 'rgba(232,98,26,0.22)',
+          dim: 'rgba(232,98,26,0.10)',
         },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+        // Silver (eagle body)
+        silver: {
+          DEFAULT: '#d4dde8',
+          2: '#a8b8cc',
         },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+        // Text hierarchy
+        txt: {
+          DEFAULT: '#e8edf5',
+          2: '#8fa3be',
+          3: '#4a6080',
+          4: '#2d4060',
         },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+        // Borders
+        border: {
+          sky: 'rgba(30,127,212,0.14)',
+          sky2: 'rgba(30,127,212,0.28)',
+          ember: 'rgba(232,98,26,0.22)',
+          light: 'rgba(212,221,232,0.08)',
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+        // Semantic
+        ok: {
+          DEFAULT: '#22d98a',
+          bg: 'rgba(34,217,138,0.08)',
+          border: 'rgba(34,217,138,0.20)',
+        },
+        warn: {
+          DEFAULT: '#f0a830',
+          bg: 'rgba(240,168,48,0.08)',
+        },
+        danger: {
+          DEFAULT: '#e84040',
+          bg: 'rgba(232,64,64,0.08)',
+          border: 'rgba(232,64,64,0.22)',
         },
       },
+
+      // ── SkyforgeAI Typography ────────────────────────────────
+      fontFamily: {
+        display: ['Rajdhani', 'sans-serif'],     // Headers, brand, stats
+        body: ['Inter', 'sans-serif'],            // Body copy, forms
+        mono: ['JetBrains Mono', 'monospace'],   // Code, data, labels
+      },
+
+      // ── Spacing & Layout ─────────────────────────────────────
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: '12px',
+        xl: '16px',
+        '2xl': '20px',
       },
+
+      // ── Animations ───────────────────────────────────────────
       keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
+        'fade-up': {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+        'shimmer': {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         },
-        "fade-up": {
-          from: { opacity: "0", transform: "translateY(8px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
+        'pulse-dot': {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.4', transform: 'scale(0.85)' },
         },
-        "pulse-dot": {
-          "0%, 100%": { opacity: "1", transform: "scale(1)" },
-          "50%": { opacity: "0.4", transform: "scale(0.85)" },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-4px)' },
+        },
+        'glow': {
+          '0%, 100%': { boxShadow: '0 0 12px rgba(30,127,212,0.28)' },
+          '50%': { boxShadow: '0 0 24px rgba(30,127,212,0.45)' },
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-up": "fade-up 0.3s ease-out",
-        "pulse-dot": "pulse-dot 2s ease infinite",
+        'fade-up': 'fade-up 0.3s ease forwards',
+        'shimmer': 'shimmer 4s linear infinite',
+        'pulse-dot': 'pulse-dot 2s ease infinite',
+        'float': 'float 4s ease infinite',
+        'glow': 'glow 2s ease infinite',
+      },
+
+      // ── Box Shadows ──────────────────────────────────────────
+      boxShadow: {
+        'sky': '0 0 20px rgba(30,127,212,0.28)',
+        'sky-lg': '0 0 32px rgba(30,127,212,0.45)',
+        'ember': '0 0 18px rgba(232,98,26,0.22)',
+        'ember-lg': '0 0 28px rgba(232,98,26,0.38)',
+        'card': '0 4px 24px rgba(0,0,0,0.4)',
+      },
+
+      // ── Background patterns ──────────────────────────────────
+      backgroundImage: {
+        'grid-sky': `linear-gradient(rgba(30,127,212,0.04) 1px, transparent 1px),
+                     linear-gradient(90deg, rgba(30,127,212,0.04) 1px, transparent 1px)`,
+        'sky-gradient': 'linear-gradient(135deg, #1e7fd4, #0d5aa8)',
+        'ember-gradient': 'linear-gradient(135deg, #e8621a, #c44810)',
+        'brand-gradient': 'linear-gradient(135deg, #d4dde8, #1e7fd4)',
+        'shimmer': 'linear-gradient(90deg, transparent, rgba(30,127,212,0.15), transparent)',
+        'card-top': 'linear-gradient(90deg, transparent, #1e7fd4, transparent)',
+        'dual-bar': 'linear-gradient(90deg, #1e7fd4, #e8621a)',
+        'ambient': `radial-gradient(ellipse 700px 500px at 0% 100%, rgba(232,98,26,0.06) 0%, transparent 70%),
+                    radial-gradient(ellipse 700px 500px at 100% 0%, rgba(30,127,212,0.08) 0%, transparent 70%)`,
+      },
+      backgroundSize: {
+        'grid': '48px 48px',
+        'shimmer': '200% 100%',
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
-} satisfies Config;
+  plugins: [animate],
+}
+
+export default config

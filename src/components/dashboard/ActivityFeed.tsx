@@ -1,8 +1,8 @@
 import React from 'react'
 import { useActivity } from '../../hooks/useActivity'
 import { useAppStore } from '../../stores/app'
-import { supabase } from '../../lib/supabase'
-import type { Client } from '../../types'
+import { supabase, isDemoMode, demoHelpers } from '../../lib/supabase'
+import type { Client, CallLog, SMSMessage } from '../../types'
 import { buildWebhookURL } from '../../constants/brand'
 
 interface Props { client: Client }

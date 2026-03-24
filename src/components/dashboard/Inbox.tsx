@@ -82,6 +82,7 @@ export function Inbox({ client }: Props) {
   }
 
   const stopSequence = async (phone: string) => {
+    if (isDemoMode) return
     await supabase.from('sequence_runs')
       .update({ status: 'stopped', stopped_reason: 'manual' })
       .eq('client_id', client.id)

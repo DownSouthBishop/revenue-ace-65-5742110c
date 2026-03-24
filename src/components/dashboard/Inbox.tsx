@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useActivity } from '../../hooks/useActivity'
 import { useAppStore } from '../../stores/app'
-import { supabase } from '../../lib/supabase'
+import { supabase, isDemoMode, demoHelpers } from '../../lib/supabase'
 import { INTENT_CONFIG } from '../../constants/brand'
 import type { Client, SMSMessage } from '../../types'
 

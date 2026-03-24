@@ -1,14 +1,5 @@
-import { useAppStore } from '@/store/appStore';
-import AuthPage from '@/pages/AuthPage';
-import OnboardPage from '@/pages/OnboardPage';
-import DashboardPage from '@/pages/DashboardPage';
-
-const Index = () => {
-  const page = useAppStore(s => s.page);
-
-  if (page === 'auth') return <AuthPage />;
-  if (page === 'onboard') return <OnboardPage />;
-  return <DashboardPage />;
-};
-
-export default Index;
+// This file is no longer used — App.tsx handles all routing now.
+// Kept for compatibility with any leftover imports.
+export default function Index() {
+  return null
+}

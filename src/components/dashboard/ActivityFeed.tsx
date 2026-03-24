@@ -28,14 +28,22 @@ export function ActivityFeed({ client }: Props) {
       "Hi, calling about routine maintenance. Please give me a call back when you have a chance.",
     ]
 
-    // Insert a demo call log directly
-    await supabase.from('call_logs').insert({
+    const newCall: CallLog = {
+      id: 'cl' + Date.now(),
       client_id: client.id,
       caller_number: from,
       call_status: 'no-answer',
+      twilio_call_sid: null,
       voicemail_url: hasVmail ? 'https://demo.voicemail/sim' : null,
       voicemail_transcript: hasVmail ? transcripts[Math.floor(Math.random() * transcripts.length)] : null,
-    })
+      received_at: new Date().toISOString(),
+    }
+
+    if (isDemoMode) {
+      demoHelpers.addCallLog(newCall)
+    } else {
+      await supabase.from('call_logs').insert(newCall)
+    }
 
     // Simulate SMS after delay
     const smsBody = client.sms_template
@@ -45,16 +53,31 @@ export function ActivityFeed({ client }: Props) {
       .replace(/{booking_link}/g, client.booking_link || 'https://cal.com/yourbiz')
 
     setTimeout(async () => {
-      await supabase.from('sms_log').insert({
+      const newSms: SMSMessage = {
+        id: 's' + Date.now(),
         client_id: client.id,
         direction: 'outbound',
         from_number: client.twilio_phone_number,
         to_number: from,
         body: smsBody,
         status: 'sent',
-        sequence_step: '1',
-      })
+        sent_at: new Date().toISOString(),
+        sequence_step: 1,
+        intent: null,
+        twilio_message_sid: null,
+      }
+      if (isDemoMode) {
+        demoHelpers.addSmsLog(newSms)
+      } else {
+        await supabase.from('sms_log').insert(newSms)
+      }
+      // Reload to show the new items
+      clearAll // trigger re-render by reloading
+      window.dispatchEvent(new Event('respondfall-reload'))
     }, (client.send_delay_seconds || 5) * 300)
+
+    // Trigger reload for current items
+    window.dispatchEvent(new Event('respondfall-reload'))
   }
 
   const fmtTime = (iso: string) =>

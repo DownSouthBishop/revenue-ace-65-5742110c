@@ -1,184 +1,134 @@
-import React from 'react'
-import { useAppStore } from '../../stores/app'
-import { CARRIERS, PHONE_SOURCES } from '../../constants/brand'
-import { buildWebhookURL } from '../../constants/brand'
-import type { Client } from '../../types'
+import { useState } from 'react';
+import type { Client } from '@/types/respondfall';
 
-interface Props { client: Client }
+const CARRIERS = [
+  { id: 'att', name: 'AT&T', code: '*61*+1XXXXXXXXXX*11*20#', off: '##61#' },
+  { id: 'tmobile', name: 'T-Mobile', code: '**61*+1XXXXXXXXXX#', off: '##61#' },
+  { id: 'verizon', name: 'Verizon', code: '*71+1XXXXXXXXXX', off: '*73' },
+  { id: 'other', name: 'Other', code: '**61*+1XXXXXXXXXX**30#', off: '##61#' },
+];
 
-export function ConnectTab({ client }: Props) {
-  const { connectSource, setConnectSource, connectCarrier, setConnectCarrier } = useAppStore()
-  const car = CARRIERS.find(c => c.id === connectCarrier) || CARRIERS[0]
+const SOURCES = [
+  { id: 'iphone', l: 'iPhone', i: '🍎' },
+  { id: 'android', l: 'Android', i: '🤖' },
+  { id: 'google', l: 'Google Voice', i: '🔵' },
+  { id: 'landline', l: 'Landline/VoIP', i: '☎️' },
+  { id: 'ringcentral', l: 'RingCentral', i: '📞' },
+  { id: 'openphone', l: 'OpenPhone', i: '📱' },
+];
 
-  const copyText = (t: string, btn: HTMLElement) => {
-    navigator.clipboard.writeText(t).catch(() => {})
-    const orig = btn.textContent
-    btn.textContent = '✓ Copied'
-    setTimeout(() => { btn.textContent = orig }, 2000)
-  }
+export function ConnectTab({ client }: { client: Client }) {
+  const [source, setSource] = useState('iphone');
+  const [carrier, setCarrier] = useState('att');
+  const [copied, setCopied] = useState('');
+  const car = CARRIERS.find(c => c.id === carrier) || CARRIERS[0];
+
+  const digits = client.twilio_phone_number.replace(/\D/g, '');
+  const dialCode = car.code.replace(/XXXXXXXXXX/g, digits.substring(1));
+
+  const copyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(label);
+    setTimeout(() => setCopied(''), 2000);
+  };
 
   return (
     <div>
-      {/* Your number */}
-      <div className="sf-card mb-3.5">
-        <div className="sf-card-title">Your Respondfall Number</div>
-        <div className="flex items-center justify-between rounded-xl"
-          style={{ background: 'var(--bg3)', border: '1px solid var(--okb)', padding: '14px 18px' }}>
+      <div className="bg-s1 border border-blue rounded-xl p-4 sm:p-5 mb-3.5">
+        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Your Respondfall Number</div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-3 border border-success rounded-[10px] p-3.5 px-4 gap-3">
           <div>
-            <div style={{ fontFamily: "'JetBrains Mono'", fontSize: 18, fontWeight: 600, color: 'var(--ok)' }}>
-              {client.twilio_phone_number}
-            </div>
-            <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono'", color: '#4a6080', marginTop: 3 }}>
-              SkyforgeAI Infrastructure · Managed for you · Included in your plan
-            </div>
+            <div className="font-mono text-lg font-semibold text-success">{client.twilio_phone_number}</div>
+            <div className="text-[11px] font-mono text-t3 mt-0.5">Respondfall Infrastructure · Managed for you</div>
           </div>
           <button
-            className="sf-url-copy"
-            style={{ padding: '8px 14px' }}
-            onClick={e => copyText(client.twilio_phone_number, e.currentTarget)}
+            className="bg-s2 border border-blue-2 rounded-lg text-t2 text-[11px] font-mono px-3.5 py-2 cursor-pointer hover:text-sky hover:border-primary transition-all self-start"
+            onClick={() => copyText(client.twilio_phone_number, 'number')}
           >
-            Copy Number
+            {copied === 'number' ? '✓ Copied' : 'Copy Number'}
           </button>
         </div>
-      </div>
-
-      {/* Webhook endpoints */}
-      <div className="sf-card mb-3.5">
-        <div className="sf-card-title">Webhook Endpoints</div>
-        <div className="sf-alert sf-alert-tip mb-3.5">
-          These URLs are pre-configured on your SkyforgeAI number. If you're using a custom Twilio account, paste them into your Twilio Console.
-        </div>
-        {([
-          { l: 'Missed Call Webhook (Voice → Status Callback)', t: 'missed-call' as const },
-          { l: 'Inbound SMS Webhook (Messaging URL)', t: 'inbound-sms' as const },
-        ] as const).map(u => (
-          <div key={u.t} style={{ marginBottom: 14 }}>
-            <label className="sf-label">{u.l}</label>
-            <div className="sf-url-row">
-              <div className="sf-url-val">{buildWebhookURL(client.id, u.t)}</div>
-              <button
-                className="sf-url-copy"
-                onClick={e => copyText(buildWebhookURL(client.id, u.t), e.currentTarget)}
-              >
-                Copy
-              </button>
-            </div>
+        {client.forward_from_number && (
+          <div className="mt-3 bg-sky-dim border border-blue-2 rounded-lg p-3 text-xs text-t2 leading-relaxed">
+            <strong className="text-sky">Your Business Number:</strong> {client.forward_from_number} → missed calls forward to {client.twilio_phone_number}
           </div>
-        ))}
+        )}
       </div>
 
-      {/* Forwarding guide */}
-      <div className="sf-card">
-        <div className="sf-card-title">Conditional Call Forwarding Setup</div>
-        <div className="sf-alert sf-alert-tip mb-4">
-          Client keeps their existing number. <strong>Only missed/unanswered calls forward</strong> to your Respondfall number — calls they answer go through normally. Zero disruption.
+      <div className="bg-s1 border border-blue rounded-xl p-4 sm:p-5">
+        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Conditional Call Forwarding Setup</div>
+        <div className="bg-sky-dim border border-blue-2 rounded-lg p-3 text-xs text-t2 mb-4 leading-relaxed border-l-[3px] border-l-primary">
+          Your phone still rings normally. <strong className="text-sky">Only missed calls forward</strong> to your Respondfall number.
         </div>
 
-        {/* Source selector */}
-        <label className="sf-label">Client's Phone Type</label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 18 }}>
-          {PHONE_SOURCES.map(src => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 mb-4">
+          {SOURCES.map(s => (
             <div
-              key={src.id}
-              onClick={() => setConnectSource(src.id)}
-              style={{
-                border: connectSource === src.id ? '2px solid var(--blue)' : '1px solid var(--b1)',
-                borderRadius: 10, padding: '14px 10px', cursor: 'pointer', textAlign: 'center',
-                background: connectSource === src.id ? 'var(--bluedim)' : 'var(--s1)',
-                boxShadow: connectSource === src.id ? '0 0 12px var(--blueglow)' : 'none',
-                transition: 'all .2s',
-              }}
+              key={s.id}
+              onClick={() => setSource(s.id)}
+              className={`border rounded-[10px] p-3 sm:p-3.5 cursor-pointer text-center transition-all ${
+                source === s.id
+                  ? 'bg-sky-dim border-2 border-primary glow-sky'
+                  : 'bg-s1 border-blue hover:bg-s2 hover:border-blue-2'
+              }`}
             >
-              <div style={{ fontSize: 20, marginBottom: 7 }}>{src.icon}</div>
-              <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono'", color: connectSource === src.id ? 'var(--blue)' : '#8fa3be', letterSpacing: '.06em' }}>
-                {src.label}
-              </div>
+              <div className="text-xl mb-1">{s.i}</div>
+              <div className={`text-[10px] sm:text-[11px] font-mono tracking-[.06em] ${source === s.id ? 'text-sky' : 'text-t2'}`}>{s.l}</div>
             </div>
           ))}
         </div>
 
-        {/* iPhone / Android → carrier sub-tabs + USSD code */}
-        {(connectSource === 'iphone' || connectSource === 'android') && (
+        {(source === 'iphone' || source === 'android') && (
           <>
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
-              {CARRIERS.map(c => (
+            <div className="flex gap-1.5 flex-wrap mb-3.5">
+              {CARRIERS.map(cr => (
                 <button
-                  key={c.id}
-                  onClick={() => setConnectCarrier(c.id)}
-                  style={{
-                    padding: '5px 13px', borderRadius: 6,
-                    border: connectCarrier === c.id ? '1px solid var(--blue)' : '1px solid var(--b1)',
-                    background: connectCarrier === c.id ? 'var(--bluedim)' : 'transparent',
-                    color: connectCarrier === c.id ? 'var(--blue)' : '#4a6080',
-                    fontSize: 11, fontFamily: "'JetBrains Mono'", cursor: 'pointer',
-                    transition: 'all .15s',
-                  }}
+                  key={cr.id}
+                  onClick={() => setCarrier(cr.id)}
+                  className={`py-1.5 px-3 rounded-md border text-[11px] font-mono cursor-pointer transition-all ${
+                    carrier === cr.id ? 'border-primary text-sky bg-sky-dim' : 'border-blue text-t3 bg-transparent'
+                  }`}
                 >
-                  {c.name}
+                  {cr.name}
                 </button>
               ))}
             </div>
-            <label className="sf-label">
-              Dial from Phone app · Replace XXXXXXXXXX with digits of {client.twilio_phone_number}
-            </label>
+            <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Open Phone app and dial this code:</label>
             <div
-              style={{
-                background: 'var(--bg)', border: '1px solid var(--b2)', borderRadius: 8,
-                padding: '10px 14px', fontFamily: "'JetBrains Mono'", fontSize: 14, color: 'var(--blue)',
-                cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                gap: 12, margin: '8px 0', transition: 'all .15s',
-              }}
-              onClick={e => copyText(car.code, e.currentTarget)}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--blue)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 12px var(--bluedim)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--b2)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
+              className="bg-background border border-blue-2 rounded-lg p-3 font-mono text-[13px] text-sky cursor-pointer flex justify-between items-center gap-3 my-2 hover:border-primary hover:shadow-[0_0_12px_hsl(var(--sky-dim))] transition-all"
+              onClick={() => copyText(dialCode, 'code')}
             >
-              <span>{car.code}</span>
-              <span style={{ fontSize: 10, color: '#4a6080' }}>tap to copy</span>
+              <span className="break-all">{dialCode}</span>
+              <span className="text-[10px] text-t3 flex-shrink-0">{copied === 'code' ? '✓ copied' : 'tap to copy'}</span>
             </div>
-            <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono'", color: '#4a6080', marginTop: 8 }}>
-              To disable: <strong>{car.disable}</strong>
+            <div className="text-[11px] text-t3 font-mono mt-2">To disable forwarding: <strong>{car.off}</strong></div>
+            <div className="bg-success-bg border border-success rounded-lg p-2.5 text-xs text-success mt-3 leading-relaxed">
+              ✓ After dialing, you'll hear a confirmation tone. Missed calls will now route through Respondfall and trigger your SMS sequence automatically.
             </div>
           </>
         )}
 
-        {connectSource === 'google' && (
-          <div style={{ fontSize: 13, color: '#8fa3be', lineHeight: 1.8 }}>
-            <strong style={{ color: '#e8edf5' }}>voice.google.com</strong> → Settings → Calls → Call Forwarding
-            → Add <code style={{ color: 'var(--blue)', fontFamily: "'JetBrains Mono'" }}>{client.twilio_phone_number}</code>
-            → Set ring time to 20 seconds before forwarding.
+        {source === 'google' && (
+          <div className="text-[13px] text-t2 leading-loose">
+            <strong className="text-foreground">voice.google.com</strong> → Settings → Calls → Call Forwarding → Add <span className="text-sky font-mono">{client.twilio_phone_number}</span> → 20 second ring time.
           </div>
         )}
-
-        {connectSource === 'landline' && (
-          <div style={{ fontSize: 13, color: '#8fa3be', lineHeight: 1.8 }}>
-            Pick up handset → dial{' '}
-            <code style={{ color: 'var(--blue)', fontFamily: "'JetBrains Mono'" }}>
-              *92 {client.twilio_phone_number}
-            </code>{' '}
-            → 2 confirmation beeps = forwarding active.
-            <br />For VoIP: provider portal → Call Settings → Forward when no answer → enter your Respondfall number.
+        {source === 'landline' && (
+          <div className="text-[13px] text-t2 leading-loose">
+            Pick up handset → dial <span className="text-sky font-mono">*92 {client.twilio_phone_number}</span> → 2 beeps = forwarding active.
           </div>
         )}
-
-        {connectSource === 'ringcentral' && (
-          <div style={{ fontSize: 13, color: '#8fa3be', lineHeight: 1.8 }}>
-            <strong style={{ color: '#e8edf5' }}>app.ringcentral.com</strong> → Admin Portal → Phone System
-            → Users → Call Handling & Forwarding → "If no one answers"
-            → Forward to external number → enter{' '}
-            <code style={{ color: 'var(--blue)', fontFamily: "'JetBrains Mono'" }}>{client.twilio_phone_number}</code>
-            → 20 second timeout.
+        {source === 'ringcentral' && (
+          <div className="text-[13px] text-t2 leading-loose">
+            <strong>app.ringcentral.com</strong> → Admin Portal → Phone System → Users → Call Handling → "If no one answers" → Forward to <span className="text-sky font-mono">{client.twilio_phone_number}</span>.
           </div>
         )}
-
-        {connectSource === 'openphone' && (
-          <div style={{ fontSize: 13, color: '#8fa3be', lineHeight: 1.8 }}>
-            OpenPhone Settings → your number → Call Forwarding → "When unavailable"
-            → enter{' '}
-            <code style={{ color: 'var(--blue)', fontFamily: "'JetBrains Mono'" }}>{client.twilio_phone_number}</code>.
-            <br />Alternatively, OpenPhone's built-in auto-reply for missed calls can supplement Respondfall.
+        {source === 'openphone' && (
+          <div className="text-[13px] text-t2 leading-loose">
+            OpenPhone → Settings → your number → Call Forwarding → "When unavailable" → enter <span className="text-sky font-mono">{client.twilio_phone_number}</span>.
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

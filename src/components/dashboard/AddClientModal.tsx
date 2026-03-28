@@ -1,146 +1,81 @@
-import React, { useState } from 'react'
-import { useAppStore } from '../../stores/app'
-import { PhonePicker } from '../phone/PhonePicker'
-import { BUSINESS_TYPES, DEFAULT_SMS_TEMPLATES } from '../../constants/brand'
-import type { ClientInsert, BusinessType } from '../../types'
-import type { AvailableNumber } from '../../hooks/usePhoneProvisioning'
+import { useState } from 'react';
+import { useAppStore } from '@/store/appStore';
+import { PhonePicker } from '@/components/PhonePicker';
 
-interface Props {
-  onAdd: (insert: ClientInsert) => Promise<void>
-}
+const INDUSTRIES = ['plumbing', 'hvac', 'electrical', 'roofing', 'landscaping', 'cleaning', 'auto_repair', 'restaurant', 'salon', 'other'];
 
-const BLANK: Partial<ClientInsert> = {
-  name: '', business_type: 'plumbing', avg_job_value: 300,
-  booking_link: '', google_review_link: '',
-  blackout_start: 22, blackout_end: 7, send_delay_seconds: 5,
-  is_active: true,
-}
+export function AddClientModal() {
+  const { setShowAddModal, addClient } = useAppStore();
+  const [name, setName] = useState('');
+  const [type, setType] = useState('plumbing');
+  const [jobVal, setJobVal] = useState(300);
+  const [bookLink, setBookLink] = useState('');
+  const [selectedPhone, setSelectedPhone] = useState('');
 
-export function AddClientModal({ onAdd }: Props) {
-  const { setShowAddClientModal, setSelectedPhone, selectedPhone } = useAppStore()
-  const [form, setForm] = useState({ ...BLANK })
-  const [saving, setSaving] = useState(false)
-  const [err, setErr] = useState('')
-
-  const set = (k: string, v: any) => {
-    setForm(f => {
-      const next = { ...f, [k]: v }
-      // Auto-update SMS template when business type changes
-      if (k === 'business_type') {
-        next.sms_template = DEFAULT_SMS_TEMPLATES[v as BusinessType]
-      }
-      return next
-    })
-  }
-
-  const handlePhoneSelect = (num: AvailableNumber) => {
-    setSelectedPhone(num)
-    set('twilio_phone_number', num.number)
-  }
-
-  const submit = async () => {
-    if (!form.name?.trim()) { setErr('Business name is required.'); return }
-    if (!selectedPhone && !form.twilio_phone_number) { setErr('Please claim a phone number.'); return }
-    setSaving(true)
-    setErr('')
-    await onAdd({
-      name: form.name!,
-      business_type: form.business_type as BusinessType || 'other',
-      twilio_phone_number: selectedPhone?.number || form.twilio_phone_number || '',
-      forward_from_number: null,
-      sms_template: form.sms_template || DEFAULT_SMS_TEMPLATES[form.business_type as BusinessType || 'other'],
-      avg_job_value: Number(form.avg_job_value) || 300,
-      blackout_start: Number(form.blackout_start) || 22,
-      blackout_end: Number(form.blackout_end) || 7,
-      send_delay_seconds: Number(form.send_delay_seconds) || 5,
-      booking_link: form.booking_link || null,
-      google_review_link: form.google_review_link || null,
+  const handleAdd = () => {
+    if (!name.trim()) { alert('Business name is required.'); return; }
+    if (!selectedPhone) { alert('Please claim a phone number for this client.'); return; }
+    addClient({
+      id: 'c' + Date.now(),
+      name,
+      business_type: type,
+      twilio_phone_number: selectedPhone,
+      forward_from_number: '',
+      sms_template: "Hey, {business_name} here — sorry we missed you! Book here: {booking_link}. Reply STOP.",
+      avg_job_value: jobVal,
+      blackout_start: 22,
+      blackout_end: 7,
+      send_delay_seconds: 5,
+      booking_link: bookLink,
+      google_review_link: '',
       is_active: true,
-    })
-    setSelectedPhone(null)
-    setShowAddClientModal(false)
-    setSaving(false)
-  }
+    });
+  };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-6"
-      style={{ background: 'rgba(5,7,13,.85)', backdropFilter: 'blur(4px)' }}
-      onClick={e => e.target === e.currentTarget && setShowAddClientModal(false)}
-    >
-      <div
-        className="relative rounded-2xl overflow-hidden w-full animate-fade-up"
-        style={{ background: 'var(--s1)', border: '1px solid var(--b2)', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto' }}
-      >
-        {/* Shimmer top bar */}
-        <div style={{ height: 2, background: 'linear-gradient(90deg, var(--blue3), var(--blue), var(--ember))', backgroundSize: '200% 100%' }} className="animate-shimmer" />
+    <div className="fixed inset-0 bg-[rgba(5,7,13,0.85)] z-[200] flex items-center justify-center p-6 backdrop-blur-sm animate-fade-up" onClick={e => e.target === e.currentTarget && setShowAddModal(false)}>
+      <div className="bg-s1 border border-blue-2 rounded-2xl p-7 w-full max-w-[520px] relative overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="absolute top-0 left-0 right-0 h-0.5 gradient-bar" />
+        <div className="font-display text-lg font-bold tracking-[.06em] text-foreground mb-5">Deploy New Client</div>
 
-        <div style={{ padding: 28 }}>
-          <div style={{ fontFamily: "'Rajdhani'", fontSize: 18, fontWeight: 700, letterSpacing: '.06em', color: '#e8edf5', marginBottom: 20 }}>
-            Deploy New Client
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Business Name *</label>
+            <input className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={name} onChange={e => setName(e.target.value)} placeholder="Coral Gables Electric" />
           </div>
-
-          <div className="flex flex-col gap-3.5">
-            {/* Business name */}
-            <div className="flex flex-col gap-1.5">
-              <label className="sf-label">Business Name *</label>
-              <input className="sf-input" placeholder="Coral Gables Electric" value={form.name || ''} onChange={e => set('name', e.target.value)} />
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Industry</label>
+              <select className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none cursor-pointer" value={type} onChange={e => setType(e.target.value)}>
+                {INDUSTRIES.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+              </select>
             </div>
-
-            {/* Industry + job value */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div className="flex flex-col gap-1.5">
-                <label className="sf-label">Industry</label>
-                <select className="sf-input" value={form.business_type || 'plumbing'} onChange={e => set('business_type', e.target.value)}>
-                  {BUSINESS_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="sf-label">Avg Job Value ($)</label>
-                <input className="sf-input" type="number" value={form.avg_job_value || 300} onChange={e => set('avg_job_value', e.target.value)} />
-              </div>
-            </div>
-
-            {/* Booking link */}
-            <div className="flex flex-col gap-1.5">
-              <label className="sf-label">
-                Booking Link <span style={{ color: 'var(--ember)' }}>★ 3x conversion lift</span>
-              </label>
-              <input className="sf-input" placeholder="https://cal.com/yourbusiness" value={form.booking_link || ''} onChange={e => set('booking_link', e.target.value)} />
-            </div>
-
-            {/* Phone number */}
-            <div style={{ borderTop: '1px solid var(--b1)', paddingTop: 14 }}>
-              <div style={{ fontFamily: "'Rajdhani'", fontSize: 13, fontWeight: 700, color: 'var(--blue)', letterSpacing: '.06em', marginBottom: 10 }}>
-                CLAIM PHONE NUMBER <span style={{ color: '#4a6080', fontFamily: "'Inter'", fontSize: 11, fontWeight: 400, letterSpacing: 0 }}>— no Twilio account needed</span>
-              </div>
-              <PhonePicker
-                selectedNumber={selectedPhone?.number}
-                onSelect={handlePhoneSelect}
-              />
-              {selectedPhone && (
-                <div className="flex items-center gap-2.5 rounded-lg mt-2"
-                  style={{ background: 'var(--okbg)', border: '1px solid var(--okb)', padding: '10px 14px' }}>
-                  <span style={{ fontSize: 18 }}>✓</span>
-                  <div>
-                    <div style={{ fontFamily: "'JetBrains Mono'", fontSize: 14, fontWeight: 600, color: 'var(--ok)' }}>{selectedPhone.number}</div>
-                    <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono'", color: '#4a6080' }}>{selectedPhone.locality}, {selectedPhone.region} · Provisioned</div>
-                  </div>
-                </div>
-              )}
+            <div>
+              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Avg Job Value ($)</label>
+              <input type="number" className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={jobVal} onChange={e => setJobVal(parseInt(e.target.value) || 0)} />
             </div>
           </div>
-
-          {err && <div className="sf-alert sf-alert-err mt-3.5">{err}</div>}
-
-          <div className="flex gap-2.5 mt-5">
-            <button className="sf-btn-ghost flex-1" onClick={() => setShowAddClientModal(false)}>Cancel</button>
-            <button className="sf-btn-primary" style={{ flex: 2 }} onClick={submit} disabled={saving}>
-              {saving ? <span className="animate-spin-slow">◌</span> : '⚡ DEPLOY CLIENT'}
-            </button>
+          <div>
+            <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Booking Link</label>
+            <input className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={bookLink} onChange={e => setBookLink(e.target.value)} placeholder="https://cal.com/..." />
           </div>
+          <div className="border-t border-blue pt-3.5">
+            <div className="font-display text-[13px] font-bold text-sky tracking-[.06em] mb-2.5">CLAIM PHONE NUMBER</div>
+            <PhonePicker onSelect={setSelectedPhone} selected={selectedPhone} />
+            {selectedPhone && (
+              <div className="flex items-center gap-2.5 p-2.5 bg-success-bg border border-success rounded-lg mt-2">
+                <span className="text-lg">✓</span>
+                <div className="font-mono text-sm font-semibold text-success">{selectedPhone}</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-2.5 mt-5">
+          <button className="flex-1 py-2.5 rounded-lg border border-blue-2 bg-transparent text-t2 font-display font-bold text-sm tracking-[.06em] uppercase cursor-pointer hover:bg-s2 transition-all active:scale-[0.98]" onClick={() => setShowAddModal(false)}>Cancel</button>
+          <button className="flex-[2] py-2.5 rounded-lg gradient-sky text-primary-foreground border-none font-display font-bold text-sm tracking-[.06em] uppercase cursor-pointer glow-sky hover:-translate-y-px transition-all active:scale-[0.98]" onClick={handleAdd}>⚡ DEPLOY CLIENT</button>
         </div>
       </div>
     </div>
-  )
+  );
 }

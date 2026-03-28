@@ -14,7 +14,294 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          avg_job_value: number | null
+          blackout_end: number | null
+          blackout_start: number | null
+          booking_link: string | null
+          business_name: string
+          business_number: string | null
+          created_at: string | null
+          google_review_link: string | null
+          id: string
+          industry: string | null
+          owner_id: string
+          respondfall_number: string | null
+          send_delay_seconds: number | null
+          sms_template: string | null
+          system_active: boolean | null
+          twilio_sid: string | null
+        }
+        Insert: {
+          avg_job_value?: number | null
+          blackout_end?: number | null
+          blackout_start?: number | null
+          booking_link?: string | null
+          business_name: string
+          business_number?: string | null
+          created_at?: string | null
+          google_review_link?: string | null
+          id?: string
+          industry?: string | null
+          owner_id: string
+          respondfall_number?: string | null
+          send_delay_seconds?: number | null
+          sms_template?: string | null
+          system_active?: boolean | null
+          twilio_sid?: string | null
+        }
+        Update: {
+          avg_job_value?: number | null
+          blackout_end?: number | null
+          blackout_start?: number | null
+          booking_link?: string | null
+          business_name?: string
+          business_number?: string | null
+          created_at?: string | null
+          google_review_link?: string | null
+          id?: string
+          industry?: string | null
+          owner_id?: string
+          respondfall_number?: string | null
+          send_delay_seconds?: number | null
+          sms_template?: string | null
+          system_active?: boolean | null
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          appt_confirmed: boolean | null
+          caller_number: string
+          client_id: string
+          created_at: string | null
+          id: string
+          intent: string | null
+          last_reply_at: string | null
+          sequence_step: number | null
+          status: string | null
+          urgency: string | null
+        }
+        Insert: {
+          appt_confirmed?: boolean | null
+          caller_number: string
+          client_id: string
+          created_at?: string | null
+          id?: string
+          intent?: string | null
+          last_reply_at?: string | null
+          sequence_step?: number | null
+          status?: string | null
+          urgency?: string | null
+        }
+        Update: {
+          appt_confirmed?: boolean | null
+          caller_number?: string
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          intent?: string | null
+          last_reply_at?: string | null
+          sequence_step?: number | null
+          status?: string | null
+          urgency?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          ai_generated: boolean | null
+          body: string
+          caller_number: string
+          client_id: string
+          direction: string
+          id: string
+          sent_at: string | null
+          step_label: string | null
+          twilio_sid: string | null
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          body: string
+          caller_number: string
+          client_id: string
+          direction: string
+          id?: string
+          sent_at?: string | null
+          step_label?: string | null
+          twilio_sid?: string | null
+        }
+        Update: {
+          ai_generated?: boolean | null
+          body?: string
+          caller_number?: string
+          client_id?: string
+          direction?: string
+          id?: string
+          sent_at?: string | null
+          step_label?: string | null
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      missed_calls: {
+        Row: {
+          called_at: string | null
+          caller_number: string
+          client_id: string
+          id: string
+          sequence_triggered: boolean | null
+          voicemail_url: string | null
+        }
+        Insert: {
+          called_at?: string | null
+          caller_number: string
+          client_id: string
+          id?: string
+          sequence_triggered?: boolean | null
+          voicemail_url?: string | null
+        }
+        Update: {
+          called_at?: string | null
+          caller_number?: string
+          client_id?: string
+          id?: string
+          sequence_triggered?: boolean | null
+          voicemail_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missed_calls_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          role?: string | null
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          id: string
+          referral_code: string | null
+          referred_name: string | null
+          referrer_number: string | null
+          status: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          id?: string
+          referral_code?: string | null
+          referred_name?: string | null
+          referrer_number?: string | null
+          status?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          referral_code?: string | null
+          referred_name?: string | null
+          referrer_number?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_health: {
+        Row: {
+          client_id: string
+          consecutive_failures: number | null
+          id: string
+          last_error: string | null
+          last_successful_send: string | null
+          last_webhook_ping: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          consecutive_failures?: number | null
+          id?: string
+          last_error?: string | null
+          last_successful_send?: string | null
+          last_webhook_ping?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          consecutive_failures?: number | null
+          id?: string
+          last_error?: string | null
+          last_successful_send?: string | null
+          last_webhook_ping?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_health_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

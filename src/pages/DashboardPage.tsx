@@ -25,9 +25,18 @@ export default function DashboardPage() {
     clients, activeClientId, setActiveClientId, tab, setTab,
     sidebarOpen, toggleSidebar, setShowAddModal, showAddModal, confirmDel,
     setPage, smsLog, mobileMenuOpen, setMobileMenuOpen, dailyStats,
+    loadActivityForClient, subscribeActivity, unsubscribeActivity,
   } = useAppStore();
 
   const client = clients.find(c => c.id === activeClientId) || clients[0];
+
+  useEffect(() => {
+    if (!activeClientId) return;
+    loadActivityForClient(activeClientId);
+    subscribeActivity(activeClientId);
+    return () => unsubscribeActivity();
+  }, [activeClientId, loadActivityForClient, subscribeActivity, unsubscribeActivity]);
+
   if (!client) return null;
 
   const phones = new Set<string>();

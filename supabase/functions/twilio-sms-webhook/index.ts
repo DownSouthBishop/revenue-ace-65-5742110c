@@ -67,6 +67,9 @@ Deno.serve(async (req) => {
 
     const raw = req.method === 'POST' ? await req.text() : '';
     const params = Object.fromEntries(new URLSearchParams(raw));
+    const twilioSig = req.headers.get('X-Twilio-Signature');
+    if (!twilioSig) return new Response('Forbidden', { status: 403, headers: cors });
+    if (!(await validateTwilioSignature(req, params))) return new Response('Forbidden', { status: 403, headers: cors });
     const from = params.From || '';
     const body = params.Body || '';
     if (!from || !body) return TWIML();

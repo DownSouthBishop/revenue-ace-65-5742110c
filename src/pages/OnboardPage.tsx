@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { PhonePicker } from '@/components/PhonePicker';
+import { supabase } from '@/integrations/supabase/client';
+import type { Tier } from '@/lib/tiers';
 
 const INDUSTRIES = ['plumbing', 'hvac', 'electrical', 'roofing', 'landscaping', 'cleaning', 'auto_repair', 'restaurant', 'salon', 'real_estate', 'medical', 'legal', 'other'];
 const STEPS = ['Business', 'Phone', 'SMS', 'Launch'];
@@ -9,17 +11,36 @@ export default function OnboardPage() {
   const { obStep, setObStep, obForm, setObForm, addClient, setPage } = useAppStore();
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const [tier, setTier] = useState<Tier>('free');
+
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from('subscriptions').select('tier, status').eq('user_id', session.user.id).maybeSingle();
+      if (data && ['active', 'trialing'].includes(data.status ?? '')) setTier((data.tier as Tier) ?? 'free');
+    })();
+  }, []);
+
+  const upgradeNow = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data } = await supabase.functions.invoke('stripe-checkout', {
+      body: { tier: 'starter', returnUrl: window.location.origin },
+    });
+    if (data?.url) window.open(data.url, '_blank');
+  };
 
   const handleNext = async () => {
     setErr('');
     if (obStep === 0) {
       if (!obForm.name.trim()) { setErr('Business name is required.'); return; }
+      if (!obForm.forward_from_number.trim()) { setErr('Your business phone number is required.'); return; }
       setObStep(1);
     } else if (obStep === 1) {
-      if (!obForm.selectedPhoneNumber) { setErr('Please claim a phone number to continue.'); return; }
+      // Phone number is optional — users can claim it later in Settings
       setObStep(2);
     } else if (obStep === 2) {
-      if (!obForm.forward_from_number.trim()) { setErr('Your business phone number is required.'); return; }
       setSaving(true);
       const { client, error } = await addClient({
         name: obForm.name,

@@ -116,6 +116,9 @@ interface AppState {
   deleteClient: (id: string) => Promise<void>;
   updateClient: (id: string, data: Partial<Client>) => Promise<void>;
   loadClients: () => Promise<void>;
+  loadActivityForClient: (clientId: string) => Promise<void>;
+  subscribeActivity: (clientId: string) => void;
+  unsubscribeActivity: () => void;
   getActiveClient: () => Client;
 
   simulateCall: () => void;

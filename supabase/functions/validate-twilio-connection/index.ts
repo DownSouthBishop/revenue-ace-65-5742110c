@@ -20,12 +20,13 @@ Deno.serve(async (req) => {
     const sbAuth = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: claims, error: claimsErr } = await sbAuth.auth.getClaims(authHeader.replace('Bearer ', ''));
-    if (claimsErr || !claims?.claims) {
+    const { data: { user }, error: authErr } = await sbAuth.auth.getUser();
+    if (authErr || !user) {
       return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const userId = user.id;
 
     const sid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const tok = Deno.env.get('TWILIO_AUTH_TOKEN');

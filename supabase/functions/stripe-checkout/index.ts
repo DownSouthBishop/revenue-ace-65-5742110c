@@ -25,10 +25,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: auth } } }
     );
-    const { data: claims } = await userSb.auth.getClaims(auth.replace('Bearer ', ''));
-    if (!claims?.claims) return json({ error: 'Unauthorized' }, 401);
-    const userId = claims.claims.sub as string;
-    const email = claims.claims.email as string | undefined;
+    const { data: { user }, error: authErr } = await userSb.auth.getUser();
+    if (authErr || !user) return json({ error: 'Unauthorized' }, 401);
+    const userId = user.id;
+    const email = user.email as string | undefined;
 
     const { tier, returnUrl } = await req.json();
     if (!tier || !PRICE_IDS[tier]) return json({ error: 'Invalid tier' }, 400);

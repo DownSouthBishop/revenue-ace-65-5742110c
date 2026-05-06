@@ -20,9 +20,8 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: auth } } },
     );
     const { data: { user }, error: authErr } = await sbAuth.auth.getUser();
-const userId = user?.id;
-if (!userId) return json({ error: 'Unauthorized' }, 401);
-    if (!userId) return json({ error: 'Unauthorized' }, 401);
+    if (authErr || !user) return json({ error: 'Unauthorized' }, 401);
+    const userId = user.id;
 
     const { clientId, to, body } = await req.json().catch(() => ({}));
     if (!clientId || !to || !body) return json({ error: 'Missing fields' }, 400);

@@ -18,6 +18,7 @@ verify_jwt = false
 
 [functions.send-daily-digest]
 verify_jwt = false
+schedule = "0 8 * * *"
 
 [functions.send-onboard-email]
 verify_jwt = false

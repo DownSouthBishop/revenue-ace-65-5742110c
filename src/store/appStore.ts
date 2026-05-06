@@ -140,7 +140,6 @@ interface AppState {
 
   // Qualification flows
   qualFlows: QualificationFlow[];
-  handleCallerReply: (phone: string, text: string) => void;
 
   // Referrals
   referrals: Referral[];

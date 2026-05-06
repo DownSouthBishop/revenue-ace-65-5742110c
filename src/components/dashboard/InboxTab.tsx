@@ -139,8 +139,14 @@ export function InboxTab({ client }: { client: Client }) {
                         }`}>
                           {m.body}
                         </div>
-                        <div className="text-[9px] font-mono text-t3 mt-0.5 text-right">
-                          {formatTime(m.sent_at)}
+                        <div className="text-[9px] font-mono text-t3 mt-0.5 text-right flex items-center justify-end gap-1.5">
+                          {m.direction === 'outbound' && (() => {
+                            const st = m.status;
+                            if (st === 'delivered') return <span className="text-success">✓ DELIVERED</span>;
+                            if (st === 'failed' || st === 'undelivered') return <span className="text-destructive">⚠ FAILED</span>;
+                            return <span className="text-amber-500">SENT</span>;
+                          })()}
+                          <span>{formatTime(m.sent_at)}</span>
                           {sl && <span className={sl.cls}> · {sl.text}</span>}
                         </div>
                       </div>

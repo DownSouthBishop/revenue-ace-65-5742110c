@@ -61,7 +61,7 @@ export function ConnectTab({ client }: { client: Client }) {
           Paste this URL into your Twilio phone number's <strong className="text-sky">"A CALL COMES IN"</strong> webhook (HTTP POST) so missed calls trigger your SMS sequence.
         </div>
         {(() => {
-          const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/twilio-webhook?client_id=${client.id}`;
+          const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/twilio-webhook?client_id=${client.id}&stage=initial`;
           return (
             <div
               className="bg-background border border-blue-2 rounded-lg p-3 font-mono text-[12px] text-sky cursor-pointer flex justify-between items-center gap-3 hover:border-primary transition-all"

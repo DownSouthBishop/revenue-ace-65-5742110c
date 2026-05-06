@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     const sid = Deno.env.get('TWILIO_ACCOUNT_SID')!;
     const tok = Deno.env.get('TWILIO_AUTH_TOKEN')!;
     const projectRef = (Deno.env.get('SUPABASE_URL') || '').replace('https://', '').split('.')[0];
-    const voiceUrl = `https://${projectRef}.supabase.co/functions/v1/twilio-webhook?client_id=${clientId}`;
+    const voiceUrl = `https://${projectRef}.supabase.co/functions/v1/twilio-webhook?client_id=${clientId}&stage=initial`;
     const smsUrl = `https://${projectRef}.supabase.co/functions/v1/twilio-sms-webhook?client_id=${clientId}`;
 
     const body = new URLSearchParams({

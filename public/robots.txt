@@ -1,14 +1,4 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
+/robots.txt-style sitemap is unnecessary for a single-page app, but search engines like canonical URLs
 User-agent: *
 Allow: /
+Sitemap: /sitemap.xml

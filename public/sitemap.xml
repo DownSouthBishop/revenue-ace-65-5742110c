@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">
+  <url><loc>/</loc><priority>1.0</priority></url>
+  <url><loc>/terms</loc><priority>0.4</priority></url>
+  <url><loc>/privacy</loc><priority>0.4</priority></url>
+  <url><loc>/sms-consent</loc><priority>0.4</priority></url>
+</urlset>

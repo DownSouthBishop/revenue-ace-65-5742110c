@@ -441,9 +441,16 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       referrals: [...s.referrals, referral],
       smsLog: [...s.smsLog, confirmSms],
     }));
+    supabase.from('referrals').insert({
+      client_id: get().activeClientId,
+      referrer_number: phone,
+      referred_name: name,
+      referral_code: code,
+      status: 'pending',
+    }).then(({ error }) => { if (error) console.warn('referral insert failed', error); });
   },
 
-  sendReply: (phone, text) => {
+  sendReply: async (phone, text) => {
     if (!text.trim()) return;
     const c = get().getActiveClient();
     if (get().optOuts.includes(phone)) {
@@ -477,10 +484,16 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       smsLog: [...s.smsLog, sms],
       replyTexts: { ...s.replyTexts, [phone]: '' },
     }));
-    // Real inbound replies arrive via the Supabase realtime subscription.
+    const { error } = await supabase.functions.invoke('send-manual-sms', {
+      body: { clientId: get().activeClientId, to: phone, body: text.trim() },
+    });
+    if (error) {
+      toast.error('Failed to send message');
+      set((s) => ({ smsLog: s.smsLog.filter(m => m.id !== sms.id) }));
+    }
   },
 
-  markDone: (phone) => {
+  markDone: async (phone) => {
     const c = get().getActiveClient();
     if (!c.google_review_link) {
       toast.warning('Add a Google review link in Settings to use this feature.');
@@ -501,6 +514,13 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       smsLog: [...s.smsLog, sms],
       reviewsSent: { ...s.reviewsSent, [phone]: true },
     }));
+    const { error } = await supabase.functions.invoke('send-manual-sms', {
+      body: { clientId: get().activeClientId, to: phone, body: msg },
+    });
+    if (error) {
+      toast.error('Failed to send review request');
+      set((s) => ({ smsLog: s.smsLog.filter(m => m.id !== sms.id) }));
+    }
   },
 
   stopSequence: async (phone) => {

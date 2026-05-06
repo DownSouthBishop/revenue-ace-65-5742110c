@@ -278,14 +278,28 @@ export const useAppStore = create<AppState>()((set, get) => ({
   addClient: async (c) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return null;
-    const row = { ...clientToRow(c), owner_id: session.user.id };
+    // Insert without respondfall_number first; provision via Twilio after insert.
+    const wantedNumber = c.twilio_phone_number;
+    const initialRow = { ...clientToRow({ ...c, twilio_phone_number: '' }), owner_id: session.user.id };
     const { data, error } = await supabase
       .from('clients')
-      .insert(row as any)
+      .insert(initialRow as any)
       .select()
       .single();
     if (error) { console.error('addClient', error); return null; }
-    const newClient = rowToClient(data);
+    let newClient = rowToClient(data);
+    if (wantedNumber) {
+      const { data: buy, error: buyErr } = await supabase.functions.invoke('twilio-buy-number', {
+        body: { phoneNumber: wantedNumber, clientId: newClient.id },
+      });
+      if (buyErr || buy?.error) {
+        console.error('twilio-buy-number', buyErr || buy?.error);
+        // Rollback: delete the orphaned client row
+        await supabase.from('clients').delete().eq('id', newClient.id);
+        return null;
+      }
+      newClient = { ...newClient, twilio_phone_number: buy.phoneNumber };
+    }
     set((s) => ({
       clients: [...s.clients, newClient],
       activeClientId: newClient.id,

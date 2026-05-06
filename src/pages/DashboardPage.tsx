@@ -10,6 +10,7 @@ import { SettingsTab } from '@/components/dashboard/SettingsTab';
 import { ConnectTab } from '@/components/dashboard/ConnectTab';
 import { AddClientModal } from '@/components/dashboard/AddClientModal';
 import { ConfirmDeleteModal } from '@/components/dashboard/ConfirmDeleteModal';
+import { ReferralsTab } from '@/components/dashboard/ReferralsTab';
 import { enablePushNotifications } from '@/components/dashboard/SystemHealth';
 import type { TabId } from '@/types/respondfall';
 
@@ -18,6 +19,7 @@ const TABS: { id: TabId; label: string; mobileLabel: string }[] = [
   { id: 'inbox', label: 'Inbox', mobileLabel: '💬' },
   { id: 'sequences', label: 'Sequences', mobileLabel: '🔄' },
   { id: 'analytics', label: 'Analytics', mobileLabel: '📊' },
+  { id: 'referrals', label: 'Referrals', mobileLabel: '🤝' },
   { id: 'config', label: 'Settings', mobileLabel: '⚙️' },
   { id: 'connect', label: 'Connect', mobileLabel: '📞' },
 ];
@@ -291,6 +293,7 @@ export default function DashboardPage() {
           {tab === 'inbox' && <InboxTab client={client} />}
           {tab === 'sequences' && <SequencesTab client={client} />}
           {tab === 'analytics' && <AnalyticsTab client={client} stats30={stats30} />}
+          {tab === 'referrals' && <ReferralsTab client={client} />}
           {tab === 'config' && <SettingsTab client={client} />}
           {tab === 'connect' && <ConnectTab client={client} />}
         </div>

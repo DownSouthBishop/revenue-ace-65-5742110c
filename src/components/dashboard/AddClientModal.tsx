@@ -10,6 +10,7 @@ export function AddClientModal() {
   const [type, setType] = useState('plumbing');
   const [jobVal, setJobVal] = useState(300);
   const [bookLink, setBookLink] = useState('');
+  const [fwdNum, setFwdNum] = useState('');
   const [selectedPhone, setSelectedPhone] = useState('');
 
   const [saving, setSaving] = useState(false);
@@ -17,12 +18,15 @@ export function AddClientModal() {
   const handleAdd = async () => {
     if (!name.trim()) { alert('Business name is required.'); return; }
     if (!selectedPhone) { alert('Please claim a phone number for this client.'); return; }
+    if (fwdNum && !/^\+[1-9]\d{6,14}$/.test(fwdNum.replace(/[\s()-]/g, ''))) {
+      alert('Business number must be in E.164 format (e.g. +15551234567).'); return;
+    }
     setSaving(true);
     const result = await addClient({
       name,
       business_type: type,
       twilio_phone_number: selectedPhone,
-      forward_from_number: '',
+      forward_from_number: fwdNum.replace(/[\s()-]/g, ''),
       sms_template: "Hey, {business_name} here — sorry we missed you! Book here: {booking_link}. Reply STOP.",
       avg_job_value: jobVal,
       blackout_start: 22,
@@ -58,6 +62,10 @@ export function AddClientModal() {
               <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Avg Job Value ($)</label>
               <input type="number" className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={jobVal} onChange={e => setJobVal(parseInt(e.target.value) || 0)} />
             </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Your Business Number <span className="text-t3">(calls forward here first)</span></label>
+            <input className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={fwdNum} onChange={e => setFwdNum(e.target.value)} placeholder="+15551234567" />
           </div>
           <div>
             <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Booking Link</label>

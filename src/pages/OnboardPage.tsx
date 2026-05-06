@@ -221,6 +221,11 @@ export default function OnboardPage() {
             {obStep > 0 && obStep < 3 && (
               <button className="flex-1 py-3 rounded-lg border border-blue-2 bg-transparent text-t2 font-display text-sm font-bold tracking-[.06em] uppercase cursor-pointer hover:bg-s2 hover:text-foreground transition-all active:scale-[0.98]" onClick={() => setObStep(obStep - 1)}>← Back</button>
             )}
+            {obStep === 1 && !obForm.selectedPhoneNumber && (
+              <button className="flex-1 py-3 rounded-lg border border-blue-2 bg-transparent text-t3 font-display text-sm font-bold tracking-[.06em] uppercase cursor-pointer hover:bg-s2 hover:text-foreground transition-all" onClick={() => { setObForm({ selectedPhoneNumber: '' }); setObStep(2); }}>
+                Skip for now →
+              </button>
+            )}
             <button className="flex-[2] py-3 rounded-lg gradient-sky text-primary-foreground border-none font-display text-sm font-bold tracking-[.06em] uppercase cursor-pointer glow-sky hover:-translate-y-px transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]" onClick={handleNext} disabled={saving}>
               {saving ? (obStep === 2 ? '◌ CLAIMING YOUR NUMBER...' : '◌ DEPLOYING...') : obStep === 3 ? '🚀 LAUNCH DASHBOARD' : 'CONTINUE →'}
             </button>

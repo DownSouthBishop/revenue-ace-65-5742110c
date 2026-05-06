@@ -167,12 +167,12 @@ interface AppState {
   simulateCall: () => void;
   sendReply: (phone: string, text: string) => void;
   markDone: (phone: string) => void;
-  stopSequence: (phone: string) => void;
+  stopSequence: (phone: string) => Promise<void>;
 
-  deleteActivityItem: (id: string) => void;
-  clearAllActivity: () => void;
-  deleteConversation: (phone: string) => void;
-  clearAllInbox: () => void;
+  deleteActivityItem: (id: string) => Promise<void>;
+  clearAllActivity: () => Promise<void>;
+  deleteConversation: (phone: string) => Promise<void>;
+  clearAllInbox: () => Promise<void>;
   executeDel: () => void;
 
   toggleVmail: (id: string) => void;

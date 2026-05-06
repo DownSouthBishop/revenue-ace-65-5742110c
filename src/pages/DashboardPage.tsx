@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
+import { supabase } from '@/integrations/supabase/client';
 import { EagleLogo } from '@/components/EagleLogo';
 import { ActivityTab } from '@/components/dashboard/ActivityTab';
 import { InboxTab } from '@/components/dashboard/InboxTab';

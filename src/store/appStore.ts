@@ -222,16 +222,21 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
   configSaved: false,
 
   loadActivityForClient: async (clientId: string) => {
-    if (!clientId) { set({ callLogs: [], smsLog: [] }); return; }
+    if (!clientId) { set({ callLogs: [], smsLog: [], optOuts: [] }); return; }
     const [calls, msgs] = await Promise.all([
       supabase.from('missed_calls').select('*').eq('client_id', clientId).order('called_at', { ascending: false }).limit(200),
       supabase.from('messages').select('*').eq('client_id', clientId).order('sent_at', { ascending: true }).limit(500),
     ]);
     if (calls.error) console.error('loadActivityForClient calls', calls.error);
     if (msgs.error) console.error('loadActivityForClient messages', msgs.error);
+    const smsLog = (msgs.data ?? []).map(msgRowToLog);
+    const optOuts = Array.from(new Set(
+      smsLog.filter(m => m.direction === 'inbound' && isStopKeyword(m.body)).map(m => m.from_number)
+    ));
     set({
       callLogs: (calls.data ?? []).map(callRowToLog),
-      smsLog: (msgs.data ?? []).map(msgRowToLog),
+      smsLog,
+      optOuts,
     });
   },
 

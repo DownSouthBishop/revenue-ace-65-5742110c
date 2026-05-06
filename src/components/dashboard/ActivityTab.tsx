@@ -65,9 +65,19 @@ export function ActivityTab({ client }: { client: Client }) {
       </div>
 
       {merged.length === 0 ? (
-        <div className="text-center py-14 bg-s1 border border-dashed border-blue-2 rounded-xl">
-          <div className="text-3xl mb-3 opacity-50">📡</div>
-          <div className="text-[13px] text-t3 font-mono">No activity yet. Calls appear here in real-time.</div>
+        <div className="text-center py-12 px-5 bg-s1 border border-dashed border-blue-2 rounded-xl">
+          <div className="text-4xl mb-3">📡</div>
+          <div className="text-[15px] font-display font-bold text-foreground mb-2">You're live — waiting for your first call</div>
+          <div className="text-[12px] text-t3 font-mono leading-relaxed max-w-md mx-auto mb-4">
+            When someone calls your Respondfall number and hangs up or goes to voicemail, it will appear here instantly. Your automated SMS sequence fires within seconds.
+          </div>
+          <button
+            className="gradient-ember text-primary-foreground border-none rounded-lg py-1.5 px-4 font-display text-[11px] font-bold tracking-[.06em] uppercase cursor-pointer glow-ember hover:-translate-y-px transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+            onClick={handleTestSetup}
+            disabled={testing}
+          >
+            {testing ? '◌ CHECKING...' : '🔬 Test Your Setup'}
+          </button>
         </div>
       ) : (
         merged.map(item => {

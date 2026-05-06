@@ -79,9 +79,12 @@ export function InboxTab({ client }: { client: Client }) {
       </div>
 
       {convos.length === 0 ? (
-        <div className="text-center py-14 bg-s1 border border-dashed border-blue-2 rounded-xl">
-          <div className="text-3xl mb-3 opacity-50">💬</div>
-          <div className="text-[13px] text-t3 font-mono">No conversations yet. Replies appear here automatically.</div>
+        <div className="text-center py-12 px-5 bg-s1 border border-dashed border-blue-2 rounded-xl">
+          <div className="text-4xl mb-3">💬</div>
+          <div className="text-[15px] font-display font-bold text-foreground mb-2">No conversations yet</div>
+          <div className="text-[12px] text-t3 font-mono leading-relaxed max-w-md mx-auto">
+            When a missed caller texts back in response to your automated sequence, the conversation will appear here. You can reply manually or let the AI qualification flow continue.
+          </div>
         </div>
       ) : (
         convos.map(cv => {

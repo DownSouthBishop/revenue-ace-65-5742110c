@@ -180,19 +180,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   mobileMenuOpen: false,
   setMobileMenuOpen: (v) => set({ mobileMenuOpen: v }),
 
-  callLogs: [
-    { id: 'cl1', caller_number: '+17865550123', call_status: 'no-answer', received_at: new Date(Date.now() - 180000).toISOString(), voicemail: true, voicemail_transcript: "Hi, this is Carlos from Coral Gables. I have a pretty bad leak under my kitchen sink — water's been dripping since this morning. Can someone come out today? It's getting worse. My number is 786-555-0123. Thanks." },
-    { id: 'cl2', caller_number: '+13055550891', call_status: 'no-answer', received_at: new Date(Date.now() - 420000).toISOString(), voicemail: false, voicemail_transcript: null },
-    { id: 'cl3', caller_number: '+17865550247', call_status: 'busy', received_at: new Date(Date.now() - 1200000).toISOString(), voicemail: true, voicemail_transcript: "Hey, I'm calling about getting a quote for a bathroom remodel. I've got two bathrooms that need new pipes and fixtures. Please call me back when you get a chance." },
-  ],
-  smsLog: [
-    { id: 's1', direction: 'outbound', to_number: '+17865550123', from_number: '+13055550100', body: "Hey, Miami Plumbing Co. here — sorry we missed you! Book here: https://cal.com/miamiplumbing. Reply STOP.", status: 'delivered', sent_at: new Date(Date.now() - 175000).toISOString(), step: 1 },
-    { id: 's2', direction: 'inbound', from_number: '+17865550123', to_number: '+13055550100', body: "Hi! I have a burst pipe under the sink — pretty urgent. Can someone come today?", status: 'received', sent_at: new Date(Date.now() - 120000).toISOString(), intent: 'emergency' },
-    { id: 's3', direction: 'outbound', to_number: '+17865550123', from_number: '+13055550100', body: "Burst pipe is our top priority — we treat this as an emergency. Our tech can be there by 2pm today. Does that work for you?", status: 'sent', sent_at: new Date(Date.now() - 115000).toISOString(), step: 'ai' },
-    { id: 's4', direction: 'inbound', from_number: '+17865550123', to_number: '+13055550100', body: "Yes! 2pm is perfect, thank you so much!", status: 'received', sent_at: new Date(Date.now() - 90000).toISOString(), intent: 'appointment' },
-    { id: 's5', direction: 'outbound', to_number: '+13055550891', from_number: '+13055550100', body: "Hey, Miami Plumbing Co. here — sorry we missed you! Book: https://cal.com/miamiplumbing. Reply STOP.", status: 'delivered', sent_at: new Date(Date.now() - 415000).toISOString(), step: 1 },
-    { id: 's6', direction: 'outbound', to_number: '+13055550891', from_number: '+13055550100', body: "Hey, still hoping to connect — Miami Plumbing Co. has availability this week. Book anytime: https://cal.com/miamiplumbing", status: 'delivered', sent_at: new Date(Date.now() - 280000).toISOString(), step: 2 },
-  ],
+  callLogs: [],
+  smsLog: [],
   optOuts: [],
   reviewsSent: {},
   replyTexts: {},

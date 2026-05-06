@@ -54,8 +54,12 @@ export function ActivityTab({ client }: { client: Client }) {
           <button className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-1.5 px-3 cursor-pointer text-[11px] font-mono flex items-center gap-1 hover:bg-[hsl(var(--destructive)/0.15)] transition-all" onClick={() => setConfirmDel({ type: 'activity', id: 'all', label: 'all activity' })}>
             🗑 Clear
           </button>
-          <button className="gradient-ember text-primary-foreground border-none rounded-lg py-2 px-4 font-display text-xs font-bold tracking-[.06em] uppercase cursor-pointer glow-ember hover:-translate-y-px transition-all active:scale-[0.98]" onClick={simulateCall}>
-            ⚡ SIMULATE
+          <button
+            className="gradient-ember text-primary-foreground border-none rounded-lg py-2 px-4 font-display text-xs font-bold tracking-[.06em] uppercase cursor-pointer glow-ember hover:-translate-y-px transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            onClick={handleTestSetup}
+            disabled={testing}
+          >
+            {testing ? '◌ CHECKING...' : '🔬 TEST SETUP'}
           </button>
         </div>
       </div>

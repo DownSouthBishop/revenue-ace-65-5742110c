@@ -1,4 +1,7 @@
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { useAppStore } from '@/store/appStore';
+import { supabase } from '@/integrations/supabase/client';
 import type { Client } from '@/types/respondfall';
 
 function formatTime(iso: string) {
@@ -12,6 +15,26 @@ function formatTime(iso: string) {
 
 export function ActivityTab({ client }: { client: Client }) {
   const { callLogs, smsLog, simulateCall, setConfirmDel, vmailOpen, toggleVmail } = useAppStore();
+  const [testing, setTesting] = useState(false);
+
+  const handleTestSetup = async () => {
+    if (testing) return;
+    setTesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-twilio-connection');
+      if (error || !data?.ok) {
+        const msg = data?.error || error?.message || 'Unknown error';
+        toast.error(`Twilio connection failed: ${msg}. Check your credentials in Settings → Connect.`);
+        return;
+      }
+      toast.success('✅ Twilio connected — running test sequence...');
+      await simulateCall();
+    } catch (e: any) {
+      toast.error(`Twilio connection failed: ${e?.message || 'network error'}. Check your credentials in Settings → Connect.`);
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const merged = [
     ...callLogs.map(c => ({ ...c, _t: 'call' as const, _ts: c.received_at })),
@@ -31,8 +54,12 @@ export function ActivityTab({ client }: { client: Client }) {
           <button className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-1.5 px-3 cursor-pointer text-[11px] font-mono flex items-center gap-1 hover:bg-[hsl(var(--destructive)/0.15)] transition-all" onClick={() => setConfirmDel({ type: 'activity', id: 'all', label: 'all activity' })}>
             🗑 Clear
           </button>
-          <button className="gradient-ember text-primary-foreground border-none rounded-lg py-2 px-4 font-display text-xs font-bold tracking-[.06em] uppercase cursor-pointer glow-ember hover:-translate-y-px transition-all active:scale-[0.98]" onClick={simulateCall}>
-            ⚡ SIMULATE
+          <button
+            className="gradient-ember text-primary-foreground border-none rounded-lg py-2 px-4 font-display text-xs font-bold tracking-[.06em] uppercase cursor-pointer glow-ember hover:-translate-y-px transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            onClick={handleTestSetup}
+            disabled={testing}
+          >
+            {testing ? '◌ CHECKING...' : '🔬 TEST SETUP'}
           </button>
         </div>
       </div>

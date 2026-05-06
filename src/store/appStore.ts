@@ -408,20 +408,16 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
 
   simulateCall: () => {
     // Simulation logic lives in src/lib/simulate.ts to keep production actions clean.
-    import('@/lib/simulate').then(m => m.runSimulatedCall(get() as any));
-  },
-
-  handleCallerReply: () => {
-    // No-op: real caller replies arrive through the Supabase realtime subscription.
-    // Simulation-only response logic lives in src/lib/simulate.ts.
+    import('@/lib/simulate').then(m => m.runSimulatedCall(get()));
   },
 
   sendReferralRequest: (phone: string) => {
-    import('@/lib/simulate').then(m => m.runSimulatedReferralRequest(get() as any, phone));
+    import('@/lib/simulate').then(m => m.runSimulatedReferralRequest(get(), phone));
   },
 
   storeReferralResponse: (phone: string, name: string, referredPhone?: string) => {
     const code = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const c = get().getActiveClient();
     const referral: Referral = {
       id: crypto.randomUUID(),
       phone,
@@ -431,7 +427,20 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
-    set((s) => ({ referrals: [...s.referrals, referral] }));
+    const confirmSms: SmsLog = {
+      id: crypto.randomUUID(),
+      direction: 'outbound',
+      from_number: c.twilio_phone_number,
+      to_number: phone,
+      body: `Thanks! We'll reach out to ${name}. Your referral code is ${code} — we'll let you know when they book! 🎉`,
+      status: 'sent',
+      sent_at: new Date().toISOString(),
+      step: 'referral',
+    };
+    set((s) => ({
+      referrals: [...s.referrals, referral],
+      smsLog: [...s.smsLog, confirmSms],
+    }));
   },
 
   sendReply: (phone, text) => {

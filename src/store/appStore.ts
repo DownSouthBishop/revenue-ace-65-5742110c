@@ -342,11 +342,12 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       .from('clients')
       .update(clientToRow(data))
       .eq('id', id);
-    if (error) { console.error('updateClient', error); return; }
+    if (error) { console.error('updateClient', error); return { error: error.message || 'Update failed.' }; }
     set((s) => ({
       clients: s.clients.map(c => c.id === id ? { ...c, ...data } : c),
       configSaved: true,
     }));
+    return {};
   },
 
   getActiveClient: () => {

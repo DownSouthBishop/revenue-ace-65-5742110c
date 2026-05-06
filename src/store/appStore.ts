@@ -221,9 +221,6 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
   setConfirmDel: (v) => set({ confirmDel: v }),
   configSaved: false,
 
-  dailyStats: { missed: 4, smsSent: 9 },
-  refreshDailyStats: () => set({ dailyStats: { missed: Math.floor(Math.random() * 5) + 2, smsSent: Math.floor(Math.random() * 8) + 5 } }),
-
   loadActivityForClient: async (clientId: string) => {
     if (!clientId) { set({ callLogs: [], smsLog: [] }); return; }
     const [calls, msgs] = await Promise.all([

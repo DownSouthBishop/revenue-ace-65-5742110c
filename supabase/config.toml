@@ -12,3 +12,10 @@ verify_jwt = false
 [functions.twilio-sms-status]
 verify_jwt = false
 
+[functions.send-daily-digest]
+verify_jwt = false
+
+[functions.send-onboard-email]
+verify_jwt = false
+
+

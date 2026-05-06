@@ -220,6 +220,45 @@ export const useAppStore = create<AppState>()((set, get) => ({
   dailyStats: { missed: 4, smsSent: 9 },
   refreshDailyStats: () => set({ dailyStats: { missed: Math.floor(Math.random() * 5) + 2, smsSent: Math.floor(Math.random() * 8) + 5 } }),
 
+  loadActivityForClient: async (clientId: string) => {
+    if (!clientId) { set({ callLogs: [], smsLog: [] }); return; }
+    const [calls, msgs] = await Promise.all([
+      supabase.from('missed_calls').select('*').eq('client_id', clientId).order('called_at', { ascending: false }).limit(200),
+      supabase.from('messages').select('*').eq('client_id', clientId).order('sent_at', { ascending: true }).limit(500),
+    ]);
+    if (calls.error) console.error('loadActivityForClient calls', calls.error);
+    if (msgs.error) console.error('loadActivityForClient messages', msgs.error);
+    set({
+      callLogs: (calls.data ?? []).map(callRowToLog),
+      smsLog: (msgs.data ?? []).map(msgRowToLog),
+    });
+  },
+
+  subscribeActivity: (clientId: string) => {
+    get().unsubscribeActivity();
+    if (!clientId) return;
+    activityChannel = supabase
+      .channel(`activity-${clientId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'missed_calls', filter: `client_id=eq.${clientId}` },
+        (payload) => {
+          const log = callRowToLog(payload.new);
+          set((s) => s.callLogs.find(c => c.id === log.id) ? {} : { callLogs: [log, ...s.callLogs] });
+        })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` },
+        (payload) => {
+          const log = msgRowToLog(payload.new);
+          set((s) => s.smsLog.find(m => m.id === log.id) ? {} : { smsLog: [...s.smsLog, log] });
+        })
+      .subscribe();
+  },
+
+  unsubscribeActivity: () => {
+    if (activityChannel) {
+      supabase.removeChannel(activityChannel);
+      activityChannel = null;
+    }
+  },
+
   loadClients: async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { set({ clients: [], activeClientId: '' }); return; }

@@ -38,6 +38,28 @@ const clientToRow = (c: Partial<Client>) => {
   return row;
 };
 
+const callRowToLog = (r: any): CallLog => ({
+  id: r.id,
+  caller_number: r.caller_number,
+  call_status: 'no-answer',
+  received_at: r.called_at,
+  voicemail: !!r.voicemail_url,
+  voicemail_transcript: r.voicemail_url ?? null,
+});
+
+const msgRowToLog = (r: any): SmsLog => ({
+  id: r.id,
+  direction: r.direction === 'inbound' ? 'inbound' : 'outbound',
+  to_number: r.direction === 'outbound' ? r.caller_number : '',
+  from_number: r.direction === 'inbound' ? r.caller_number : '',
+  body: r.body,
+  status: r.direction === 'inbound' ? 'received' : 'sent',
+  sent_at: r.sent_at,
+  step: r.step_label ?? undefined,
+});
+
+let activityChannel: ReturnType<typeof supabase.channel> | null = null;
+
 const DEMO_NUMBERS: PhoneNumber[] = [
   { number: '+1 (305) 555-0100', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
   { number: '+1 (305) 555-0147', locality: 'Miami', region: 'FL', price: '$1.15/mo' },

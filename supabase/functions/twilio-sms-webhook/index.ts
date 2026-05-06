@@ -14,6 +14,18 @@ const TWIML = (xml = '<Response/>') =>
 
 const STOP_WORDS = new Set(['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT']);
 
+async function validateTwilioSignature(req: Request, params: Record<string, string>) {
+  const token = Deno.env.get('TWILIO_AUTH_TOKEN');
+  const sig = req.headers.get('X-Twilio-Signature');
+  if (!token || !sig) return false;
+  const sortedKeys = Object.keys(params).sort();
+  const data = req.url + sortedKeys.map((k) => k + params[k]).join('');
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(token), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
+  const sigBytes = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+  const expected = btoa(String.fromCharCode(...new Uint8Array(sigBytes)));
+  return expected === sig;
+}
+
 async function aiReply(client: any, from: string, history: { role: string; content: string }[]) {
   const apiKey = Deno.env.get('LOVABLE_API_KEY');
   if (!apiKey) return null;
@@ -55,6 +67,9 @@ Deno.serve(async (req) => {
 
     const raw = req.method === 'POST' ? await req.text() : '';
     const params = Object.fromEntries(new URLSearchParams(raw));
+    const twilioSig = req.headers.get('X-Twilio-Signature');
+    if (!twilioSig) return new Response('Forbidden', { status: 403, headers: cors });
+    if (!(await validateTwilioSignature(req, params))) return new Response('Forbidden', { status: 403, headers: cors });
     const from = params.From || '';
     const body = params.Body || '';
     if (!from || !body) return TWIML();

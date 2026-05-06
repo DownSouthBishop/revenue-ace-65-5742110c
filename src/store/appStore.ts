@@ -80,18 +80,6 @@ const msgRowToLog = (r: MessageRowWithStatus): SmsLog => ({
 
 let activityChannel: ReturnType<typeof supabase.channel> | null = null;
 
-const DEMO_NUMBERS: PhoneNumber[] = [
-  { number: '+1 (305) 555-0100', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (305) 555-0147', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (786) 555-0203', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (954) 555-0281', locality: 'Fort Lauderdale', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (561) 555-0334', locality: 'Boca Raton', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (407) 555-0412', locality: 'Orlando', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (213) 555-0501', locality: 'Los Angeles', region: 'CA', price: '$1.15/mo' },
-  { number: '+1 (312) 555-0617', locality: 'Chicago', region: 'IL', price: '$1.15/mo' },
-  { number: '+1 (212) 555-0789', locality: 'New York', region: 'NY', price: '$1.15/mo' },
-  { number: '+1 (713) 555-0832', locality: 'Houston', region: 'TX', price: '$1.15/mo' },
-];
 
 interface AppState {
   page: PageId;
@@ -164,8 +152,8 @@ interface AppState {
   getActiveClient: () => Client;
 
   simulateCall: () => void;
-  sendReply: (phone: string, text: string) => void;
-  markDone: (phone: string) => void;
+  sendReply: (phone: string, text: string) => Promise<void>;
+  markDone: (phone: string) => Promise<void>;
   stopSequence: (phone: string) => Promise<void>;
 
   deleteActivityItem: (id: string) => Promise<void>;
@@ -180,7 +168,7 @@ interface AppState {
   // Phone search
   phoneResults: PhoneNumber[];
   phoneSearching: boolean;
-  searchPhoneNumbers: (query: string) => void;
+  searchPhoneNumbers: (query: string) => Promise<void>;
 
 }
 
@@ -441,9 +429,16 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       referrals: [...s.referrals, referral],
       smsLog: [...s.smsLog, confirmSms],
     }));
+    supabase.from('referrals').insert({
+      client_id: get().activeClientId,
+      referrer_number: phone,
+      referred_name: name,
+      referral_code: code,
+      status: 'pending',
+    }).then(({ error }) => { if (error) console.warn('referral insert failed', error); });
   },
 
-  sendReply: (phone, text) => {
+  sendReply: async (phone, text) => {
     if (!text.trim()) return;
     const c = get().getActiveClient();
     if (get().optOuts.includes(phone)) {
@@ -477,10 +472,16 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       smsLog: [...s.smsLog, sms],
       replyTexts: { ...s.replyTexts, [phone]: '' },
     }));
-    // Real inbound replies arrive via the Supabase realtime subscription.
+    const { error } = await supabase.functions.invoke('send-manual-sms', {
+      body: { clientId: get().activeClientId, to: phone, body: text.trim() },
+    });
+    if (error) {
+      toast.error('Failed to send message');
+      set((s) => ({ smsLog: s.smsLog.filter(m => m.id !== sms.id) }));
+    }
   },
 
-  markDone: (phone) => {
+  markDone: async (phone) => {
     const c = get().getActiveClient();
     if (!c.google_review_link) {
       toast.warning('Add a Google review link in Settings to use this feature.');
@@ -501,6 +502,13 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       smsLog: [...s.smsLog, sms],
       reviewsSent: { ...s.reviewsSent, [phone]: true },
     }));
+    const { error } = await supabase.functions.invoke('send-manual-sms', {
+      body: { clientId: get().activeClientId, to: phone, body: msg },
+    });
+    if (error) {
+      toast.error('Failed to send review request');
+      set((s) => ({ smsLog: s.smsLog.filter(m => m.id !== sms.id) }));
+    }
   },
 
   stopSequence: async (phone) => {
@@ -580,20 +588,30 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
 
   phoneResults: [],
   phoneSearching: false,
-  searchPhoneNumbers: (query) => {
+  searchPhoneNumbers: async (query) => {
     set({ phoneSearching: true, phoneResults: [] });
-    setTimeout(() => {
-      const q = query.toLowerCase().replace(/\D/g, '').substring(0, 3);
-      const qStr = query.toLowerCase();
-      let results = DEMO_NUMBERS.filter(n =>
-        (q && n.number.replace(/\D/g, '').substring(1, 4).startsWith(q)) ||
-        n.locality.toLowerCase().includes(qStr) ||
-        n.region.toLowerCase().includes(qStr) ||
-        !query
-      ).slice(0, 6);
-      if (!results.length) results = DEMO_NUMBERS.slice(0, 4);
+    try {
+      const digits = query.replace(/\D/g, '');
+      const isAreaCode = /^\d{3}$/.test(digits.slice(0, 3)) && digits.length <= 3;
+      const { data, error } = await supabase.functions.invoke('twilio-search-numbers', {
+        body: isAreaCode ? { areaCode: digits.slice(0, 3) } : { contains: query || undefined },
+      });
+      if (error || !data?.numbers?.length) {
+        toast.error('Phone number search failed');
+        set({ phoneSearching: false, phoneResults: [] });
+        return;
+      }
+      const results: PhoneNumber[] = data.numbers.map((n: { number: string; locality: string; region: string }) => ({
+        number: n.number,
+        locality: n.locality,
+        region: n.region,
+        price: '',
+      }));
       set({ phoneSearching: false, phoneResults: results });
-    }, 800);
+    } catch {
+      toast.error('Phone number search failed');
+      set({ phoneSearching: false, phoneResults: [] });
+    }
   },
 }), {
   name: 'respondfall-app',

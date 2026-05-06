@@ -16,6 +16,7 @@ Deno.serve(async (req) => {
     const userSb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } } });
     const { data: claims } = await userSb.auth.getClaims(auth.replace('Bearer ', ''));
     if (!claims?.claims) return json({ error: 'Unauthorized' }, 401);
+    const userId = claims.claims.sub as string;
 
     const { numberSid } = await req.json();
     if (!numberSid) return json({ ok: true, skipped: true });
@@ -30,6 +31,11 @@ Deno.serve(async (req) => {
       const body = await r.text();
       return json({ error: body }, r.status);
     }
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    await admin.from('audit_log').insert({
+      user_id: userId, action: 'twilio.number.released',
+      resource_type: 'phone_number', resource_id: numberSid,
+    });
     return json({ ok: true });
   } catch (e) {
     return json({ error: String(e) }, 500);

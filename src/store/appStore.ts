@@ -334,6 +334,15 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       showAddModal: false,
       tab: 'activity',
     }));
+    // Fire-and-forget onboarding confirmation email
+    supabase.functions.invoke('send-onboard-email', {
+      body: {
+        to: session.user.email,
+        businessName: newClient.name,
+        twilioNumber: newClient.twilio_phone_number,
+        bookingLink: newClient.booking_link,
+      },
+    }).catch((e) => console.warn('send-onboard-email', e));
     return { client: newClient };
   },
 

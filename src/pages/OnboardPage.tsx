@@ -10,7 +10,7 @@ export default function OnboardPage() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setErr('');
     if (obStep === 0) {
       if (!obForm.name.trim()) { setErr('Business name is required.'); return; }
@@ -19,27 +19,25 @@ export default function OnboardPage() {
       if (!obForm.selectedPhoneNumber) { setErr('Please claim a phone number to continue.'); return; }
       setObStep(2);
     } else if (obStep === 2) {
+      if (!obForm.forward_from_number.trim()) { setErr('Your business phone number is required.'); return; }
       setSaving(true);
-      setTimeout(() => {
-        const nc = {
-          id: 'c' + Date.now(),
-          name: obForm.name,
-          business_type: obForm.business_type,
-          twilio_phone_number: obForm.selectedPhoneNumber,
-          forward_from_number: obForm.forward_from_number,
-          sms_template: obForm.sms_template,
-          avg_job_value: obForm.avg_job_value,
-          blackout_start: obForm.blackout_start,
-          blackout_end: obForm.blackout_end,
-          send_delay_seconds: obForm.send_delay_seconds,
-          booking_link: obForm.booking_link,
-          google_review_link: obForm.google_review_link,
-          is_active: true,
-        };
-        addClient(nc);
-        setSaving(false);
-        setObStep(3);
-      }, 1400);
+      const result = await addClient({
+        name: obForm.name,
+        business_type: obForm.business_type,
+        twilio_phone_number: obForm.selectedPhoneNumber,
+        forward_from_number: obForm.forward_from_number,
+        sms_template: obForm.sms_template,
+        avg_job_value: obForm.avg_job_value,
+        blackout_start: obForm.blackout_start,
+        blackout_end: obForm.blackout_end,
+        send_delay_seconds: obForm.send_delay_seconds,
+        booking_link: obForm.booking_link,
+        google_review_link: obForm.google_review_link,
+        is_active: true,
+      });
+      setSaving(false);
+      if (!result) { setErr('Failed to save client. Please try again.'); return; }
+      setObStep(3);
     } else {
       setPage('dashboard');
     }

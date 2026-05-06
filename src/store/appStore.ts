@@ -1,6 +1,42 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Client, CallLog, SmsLog, PhoneNumber, TabId, PageId, AuthMode, QualificationFlow, QualReason, Referral } from '@/types/respondfall';
+import { supabase } from '@/integrations/supabase/client';
+
+// Map a DB row from public.clients to the frontend Client shape
+const rowToClient = (r: any): Client => ({
+  id: r.id,
+  name: r.business_name ?? '',
+  business_type: r.industry ?? 'general',
+  twilio_phone_number: r.respondfall_number ?? '',
+  forward_from_number: r.business_number ?? '',
+  sms_template: r.sms_template ?? '',
+  avg_job_value: Number(r.avg_job_value ?? 0),
+  blackout_start: r.blackout_start ?? 22,
+  blackout_end: r.blackout_end ?? 7,
+  send_delay_seconds: r.send_delay_seconds ?? 5,
+  booking_link: r.booking_link ?? '',
+  google_review_link: r.google_review_link ?? '',
+  is_active: r.system_active ?? true,
+});
+
+// Map frontend Client fields → DB column names
+const clientToRow = (c: Partial<Client>) => {
+  const row: Record<string, any> = {};
+  if (c.name !== undefined) row.business_name = c.name;
+  if (c.business_type !== undefined) row.industry = c.business_type;
+  if (c.twilio_phone_number !== undefined) row.respondfall_number = c.twilio_phone_number;
+  if (c.forward_from_number !== undefined) row.business_number = c.forward_from_number;
+  if (c.sms_template !== undefined) row.sms_template = c.sms_template;
+  if (c.avg_job_value !== undefined) row.avg_job_value = c.avg_job_value;
+  if (c.blackout_start !== undefined) row.blackout_start = c.blackout_start;
+  if (c.blackout_end !== undefined) row.blackout_end = c.blackout_end;
+  if (c.send_delay_seconds !== undefined) row.send_delay_seconds = c.send_delay_seconds;
+  if (c.booking_link !== undefined) row.booking_link = c.booking_link;
+  if (c.google_review_link !== undefined) row.google_review_link = c.google_review_link;
+  if (c.is_active !== undefined) row.system_active = c.is_active;
+  return row;
+};
 
 const DEMO_NUMBERS: PhoneNumber[] = [
   { number: '+1 (305) 555-0100', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
@@ -76,9 +112,10 @@ interface AppState {
   configSaved: boolean;
 
   // Actions
-  addClient: (c: Client) => void;
-  deleteClient: (id: string) => void;
-  updateClient: (id: string, data: Partial<Client>) => void;
+  addClient: (c: Omit<Client, 'id'>) => Promise<Client | null>;
+  deleteClient: (id: string) => Promise<void>;
+  updateClient: (id: string, data: Partial<Client>) => Promise<void>;
+  loadClients: () => Promise<void>;
   getActiveClient: () => Client;
 
   simulateCall: () => void;
@@ -129,11 +166,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
   setObForm: (f) => set((s) => ({ obForm: { ...s.obForm, ...f } })),
 
-  clients: [
-    { id: 'c1', name: 'Miami Plumbing Co.', business_type: 'plumbing', twilio_phone_number: '+1 (305) 555-0100', forward_from_number: '+13055559999', sms_template: "Hey, {business_name} here — sorry we missed you! Book here: {booking_link}. Reply STOP.", avg_job_value: 300, blackout_start: 22, blackout_end: 7, send_delay_seconds: 5, booking_link: 'https://cal.com/miamiplumbing', google_review_link: 'https://g.page/r/abc/review', is_active: true },
-    { id: 'c2', name: 'South Beach HVAC', business_type: 'hvac', twilio_phone_number: '+1 (786) 555-0203', forward_from_number: '', sms_template: "Hi! South Beach HVAC missed your call — book here: {booking_link}. Reply STOP.", avg_job_value: 450, blackout_start: 21, blackout_end: 8, send_delay_seconds: 3, booking_link: 'https://cal.com/sbhvac', google_review_link: '', is_active: true },
-  ],
-  activeClientId: 'c1',
+  clients: [],
+  activeClientId: '',
   setActiveClientId: (id) => set({ activeClientId: id, tab: 'activity', mobileMenuOpen: false }),
   tab: 'activity',
   setTab: (t) => set({ tab: t, configSaved: false }),
@@ -172,16 +206,64 @@ export const useAppStore = create<AppState>()((set, get) => ({
   dailyStats: { missed: 4, smsSent: 9 },
   refreshDailyStats: () => set({ dailyStats: { missed: Math.floor(Math.random() * 5) + 2, smsSent: Math.floor(Math.random() * 8) + 5 } }),
 
-  addClient: (c) => set((s) => ({ clients: [...s.clients, c], activeClientId: c.id, showAddModal: false, tab: 'activity' })),
-  deleteClient: (id) => set((s) => {
-    const remaining = s.clients.filter(c => c.id !== id);
-    if (remaining.length === 0) return { clients: [], page: 'onboard' as PageId, obStep: 0 };
-    return { clients: remaining, activeClientId: remaining[0].id };
-  }),
-  updateClient: (id, data) => set((s) => ({
-    clients: s.clients.map(c => c.id === id ? { ...c, ...data } : c),
-    configSaved: true,
-  })),
+  loadClients: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { set({ clients: [], activeClientId: '' }); return; }
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('owner_id', session.user.id)
+      .order('created_at', { ascending: true });
+    if (error) { console.error('loadClients', error); return; }
+    const clients = (data ?? []).map(rowToClient);
+    set((s) => ({
+      clients,
+      activeClientId: clients.find(c => c.id === s.activeClientId)?.id || clients[0]?.id || '',
+    }));
+  },
+
+  addClient: async (c) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const row = { ...clientToRow(c), owner_id: session.user.id };
+    const { data, error } = await supabase
+      .from('clients')
+      .insert(row as any)
+      .select()
+      .single();
+    if (error) { console.error('addClient', error); return null; }
+    const newClient = rowToClient(data);
+    set((s) => ({
+      clients: [...s.clients, newClient],
+      activeClientId: newClient.id,
+      showAddModal: false,
+      tab: 'activity',
+    }));
+    return newClient;
+  },
+
+  deleteClient: async (id) => {
+    const { error } = await supabase.from('clients').delete().eq('id', id);
+    if (error) { console.error('deleteClient', error); return; }
+    set((s) => {
+      const remaining = s.clients.filter(c => c.id !== id);
+      if (remaining.length === 0) return { clients: [], page: 'onboard' as PageId, obStep: 0, activeClientId: '' };
+      return { clients: remaining, activeClientId: remaining[0].id };
+    });
+  },
+
+  updateClient: async (id, data) => {
+    const { error } = await supabase
+      .from('clients')
+      .update(clientToRow(data))
+      .eq('id', id);
+    if (error) { console.error('updateClient', error); return; }
+    set((s) => ({
+      clients: s.clients.map(c => c.id === id ? { ...c, ...data } : c),
+      configSaved: true,
+    }));
+  },
+
   getActiveClient: () => {
     const s = get();
     return s.clients.find(c => c.id === s.activeClientId) || s.clients[0];

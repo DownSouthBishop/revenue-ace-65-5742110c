@@ -14,10 +14,14 @@ function inBlackout(s: number, e: number, h: number) {
 async function sendSms(from: string, to: string, body: string) {
   const sid = Deno.env.get('TWILIO_ACCOUNT_SID')!;
   const tok = Deno.env.get('TWILIO_AUTH_TOKEN')!;
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
     method: 'POST',
     headers: { Authorization: `Basic ${btoa(`${sid}:${tok}`)}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ From: from, To: to, Body: body }),
+    body: new URLSearchParams({
+      From: from, To: to, Body: body,
+      StatusCallback: `${supabaseUrl}/functions/v1/twilio-sms-status`,
+    }),
   });
   const data = await r.json();
   if (!r.ok) throw new Error(`Twilio ${r.status}: ${JSON.stringify(data)}`);

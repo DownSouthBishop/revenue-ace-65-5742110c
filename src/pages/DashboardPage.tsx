@@ -10,6 +10,7 @@ import { SettingsTab } from '@/components/dashboard/SettingsTab';
 import { ConnectTab } from '@/components/dashboard/ConnectTab';
 import { AddClientModal } from '@/components/dashboard/AddClientModal';
 import { ConfirmDeleteModal } from '@/components/dashboard/ConfirmDeleteModal';
+import { enablePushNotifications } from '@/components/dashboard/SystemHealth';
 import type { TabId } from '@/types/respondfall';
 
 const TABS: { id: TabId; label: string; mobileLabel: string }[] = [
@@ -31,6 +32,24 @@ export default function DashboardPage() {
 
   const client = clients.find(c => c.id === activeClientId) || clients[0];
   const [stats30, setStats30] = useState({ missed: 0, smsSent: 0, missedToday: 0, smsToday: 0 });
+  const [showNotifBanner, setShowNotifBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    const dismissed = localStorage.getItem('notif-dismissed') === '1';
+    if (!dismissed && Notification.permission === 'default') {
+      setShowNotifBanner(true);
+    }
+  }, []);
+
+  const handleEnableNotifs = async () => {
+    await enablePushNotifications();
+    setShowNotifBanner(false);
+  };
+  const dismissNotifBanner = () => {
+    localStorage.setItem('notif-dismissed', '1');
+    setShowNotifBanner(false);
+  };
 
   useEffect(() => {
     if (!activeClientId) return;
@@ -211,6 +230,20 @@ export default function DashboardPage() {
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, hsl(var(--sky-blue)) 30%, hsl(var(--ember)) 70%, transparent)', opacity: 0.22 }} />
         </div>
+
+        {showNotifBanner && (
+          <div className="mx-4 lg:mx-6 mt-3 flex items-center justify-between gap-3 bg-sky-dim border border-blue-2 rounded-xl px-3 lg:px-4 py-2.5">
+            <div className="text-xs lg:text-sm text-foreground font-medium">
+              🔔 Get notified instantly when a call comes in
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button onClick={handleEnableNotifs} className="gradient-sky text-primary-foreground rounded-md px-3 py-1.5 text-[11px] font-mono font-semibold tracking-[.04em] hover:glow-sky transition-all">
+                Enable Notifications
+              </button>
+              <button onClick={dismissNotifBanner} aria-label="Dismiss" className="text-t3 hover:text-foreground text-sm px-2 py-1">✕</button>
+            </div>
+          </div>
+        )}
 
         {/* Stats row */}
         <div className="px-4 lg:px-6 pt-3 lg:pt-4 grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 flex-shrink-0">

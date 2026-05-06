@@ -121,7 +121,7 @@ export default function DashboardPage() {
                 <div className="text-xs font-medium text-foreground">Agency Owner</div>
                 <div className="text-[10px] font-mono text-ember tracking-[.06em]">SkyforgeAI Partner</div>
               </div>
-              <button className="w-full bg-transparent border border-blue rounded-md text-t3 py-1.5 cursor-pointer text-[11px] font-mono text-center hover:border-blue-2 hover:text-foreground transition-all" onClick={() => setPage('auth')}>Logout</button>
+              <button className="w-full bg-transparent border border-blue rounded-md text-t3 py-1.5 cursor-pointer text-[11px] font-mono text-center hover:border-blue-2 hover:text-foreground transition-all" onClick={() => supabase.auth.signOut()}>Logout</button>
             </div>
           </div>
         </div>

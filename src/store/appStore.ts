@@ -396,6 +396,22 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       callLogs: [newCall, ...s.callLogs],
     }));
 
+    // TCPA: do not send anything to opted-out numbers
+    if (get().optOuts.includes(from)) {
+      const blocked: SmsLog = {
+        id: 's' + Date.now(),
+        direction: 'outbound',
+        from_number: c.twilio_phone_number,
+        to_number: from,
+        body: '[SMS blocked — this number has opted out]',
+        status: 'blocked',
+        sent_at: new Date().toISOString(),
+        step: 'blocked',
+      };
+      set((s) => ({ smsLog: [...s.smsLog, blocked] }));
+      return;
+    }
+
     // Step 1: Initial auto-response
     const body = c.sms_template
       .replace(/{business_name}/g, c.name)

@@ -38,6 +38,28 @@ const clientToRow = (c: Partial<Client>) => {
   return row;
 };
 
+const callRowToLog = (r: any): CallLog => ({
+  id: r.id,
+  caller_number: r.caller_number,
+  call_status: 'no-answer',
+  received_at: r.called_at,
+  voicemail: !!r.voicemail_url,
+  voicemail_transcript: r.voicemail_url ?? null,
+});
+
+const msgRowToLog = (r: any): SmsLog => ({
+  id: r.id,
+  direction: r.direction === 'inbound' ? 'inbound' : 'outbound',
+  to_number: r.direction === 'outbound' ? r.caller_number : '',
+  from_number: r.direction === 'inbound' ? r.caller_number : '',
+  body: r.body,
+  status: r.direction === 'inbound' ? 'received' : 'sent',
+  sent_at: r.sent_at,
+  step: r.step_label ?? undefined,
+});
+
+let activityChannel: ReturnType<typeof supabase.channel> | null = null;
+
 const DEMO_NUMBERS: PhoneNumber[] = [
   { number: '+1 (305) 555-0100', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
   { number: '+1 (305) 555-0147', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
@@ -116,6 +138,9 @@ interface AppState {
   deleteClient: (id: string) => Promise<void>;
   updateClient: (id: string, data: Partial<Client>) => Promise<void>;
   loadClients: () => Promise<void>;
+  loadActivityForClient: (clientId: string) => Promise<void>;
+  subscribeActivity: (clientId: string) => void;
+  unsubscribeActivity: () => void;
   getActiveClient: () => Client;
 
   simulateCall: () => void;
@@ -177,19 +202,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   mobileMenuOpen: false,
   setMobileMenuOpen: (v) => set({ mobileMenuOpen: v }),
 
-  callLogs: [
-    { id: 'cl1', caller_number: '+17865550123', call_status: 'no-answer', received_at: new Date(Date.now() - 180000).toISOString(), voicemail: true, voicemail_transcript: "Hi, this is Carlos from Coral Gables. I have a pretty bad leak under my kitchen sink — water's been dripping since this morning. Can someone come out today? It's getting worse. My number is 786-555-0123. Thanks." },
-    { id: 'cl2', caller_number: '+13055550891', call_status: 'no-answer', received_at: new Date(Date.now() - 420000).toISOString(), voicemail: false, voicemail_transcript: null },
-    { id: 'cl3', caller_number: '+17865550247', call_status: 'busy', received_at: new Date(Date.now() - 1200000).toISOString(), voicemail: true, voicemail_transcript: "Hey, I'm calling about getting a quote for a bathroom remodel. I've got two bathrooms that need new pipes and fixtures. Please call me back when you get a chance." },
-  ],
-  smsLog: [
-    { id: 's1', direction: 'outbound', to_number: '+17865550123', from_number: '+13055550100', body: "Hey, Miami Plumbing Co. here — sorry we missed you! Book here: https://cal.com/miamiplumbing. Reply STOP.", status: 'delivered', sent_at: new Date(Date.now() - 175000).toISOString(), step: 1 },
-    { id: 's2', direction: 'inbound', from_number: '+17865550123', to_number: '+13055550100', body: "Hi! I have a burst pipe under the sink — pretty urgent. Can someone come today?", status: 'received', sent_at: new Date(Date.now() - 120000).toISOString(), intent: 'emergency' },
-    { id: 's3', direction: 'outbound', to_number: '+17865550123', from_number: '+13055550100', body: "Burst pipe is our top priority — we treat this as an emergency. Our tech can be there by 2pm today. Does that work for you?", status: 'sent', sent_at: new Date(Date.now() - 115000).toISOString(), step: 'ai' },
-    { id: 's4', direction: 'inbound', from_number: '+17865550123', to_number: '+13055550100', body: "Yes! 2pm is perfect, thank you so much!", status: 'received', sent_at: new Date(Date.now() - 90000).toISOString(), intent: 'appointment' },
-    { id: 's5', direction: 'outbound', to_number: '+13055550891', from_number: '+13055550100', body: "Hey, Miami Plumbing Co. here — sorry we missed you! Book: https://cal.com/miamiplumbing. Reply STOP.", status: 'delivered', sent_at: new Date(Date.now() - 415000).toISOString(), step: 1 },
-    { id: 's6', direction: 'outbound', to_number: '+13055550891', from_number: '+13055550100', body: "Hey, still hoping to connect — Miami Plumbing Co. has availability this week. Book anytime: https://cal.com/miamiplumbing", status: 'delivered', sent_at: new Date(Date.now() - 280000).toISOString(), step: 2 },
-  ],
+  callLogs: [],
+  smsLog: [],
   optOuts: [],
   reviewsSent: {},
   replyTexts: {},
@@ -205,6 +219,45 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   dailyStats: { missed: 4, smsSent: 9 },
   refreshDailyStats: () => set({ dailyStats: { missed: Math.floor(Math.random() * 5) + 2, smsSent: Math.floor(Math.random() * 8) + 5 } }),
+
+  loadActivityForClient: async (clientId: string) => {
+    if (!clientId) { set({ callLogs: [], smsLog: [] }); return; }
+    const [calls, msgs] = await Promise.all([
+      supabase.from('missed_calls').select('*').eq('client_id', clientId).order('called_at', { ascending: false }).limit(200),
+      supabase.from('messages').select('*').eq('client_id', clientId).order('sent_at', { ascending: true }).limit(500),
+    ]);
+    if (calls.error) console.error('loadActivityForClient calls', calls.error);
+    if (msgs.error) console.error('loadActivityForClient messages', msgs.error);
+    set({
+      callLogs: (calls.data ?? []).map(callRowToLog),
+      smsLog: (msgs.data ?? []).map(msgRowToLog),
+    });
+  },
+
+  subscribeActivity: (clientId: string) => {
+    get().unsubscribeActivity();
+    if (!clientId) return;
+    activityChannel = supabase
+      .channel(`activity-${clientId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'missed_calls', filter: `client_id=eq.${clientId}` },
+        (payload) => {
+          const log = callRowToLog(payload.new);
+          set((s) => s.callLogs.find(c => c.id === log.id) ? {} : { callLogs: [log, ...s.callLogs] });
+        })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` },
+        (payload) => {
+          const log = msgRowToLog(payload.new);
+          set((s) => s.smsLog.find(m => m.id === log.id) ? {} : { smsLog: [...s.smsLog, log] });
+        })
+      .subscribe();
+  },
+
+  unsubscribeActivity: () => {
+    if (activityChannel) {
+      supabase.removeChannel(activityChannel);
+      activityChannel = null;
+    }
+  },
 
   loadClients: async () => {
     const { data: { session } } = await supabase.auth.getSession();

@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { Client } from '@/types/respondfall';
+import type { Database } from '@/integrations/supabase/types';
+
+type SystemHealthRow = Database['public']['Tables']['system_health']['Row'];
 
 export function SystemHealthCard({ client }: { client: Client }) {
-  const [h, setH] = useState<any>(null);
+  const [h, setH] = useState<SystemHealthRow | null>(null);
   const [pending, setPending] = useState(0);
   useEffect(() => {
     let active = true;

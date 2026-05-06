@@ -189,7 +189,7 @@ export default function DashboardPage() {
               {sidebarOpen ? '◀' : '▶'}
             </button>
             {sidebarOpen && (
-              <button className="flex-1 bg-transparent border border-blue rounded-md text-t3 py-1.5 cursor-pointer text-[11px] font-mono text-center hover:border-blue-2 hover:text-foreground transition-all" onClick={() => setPage('auth')}>
+              <button className="flex-1 bg-transparent border border-blue rounded-md text-t3 py-1.5 cursor-pointer text-[11px] font-mono text-center hover:border-blue-2 hover:text-foreground transition-all" onClick={() => supabase.auth.signOut()}>
                 Logout
               </button>
             )}

@@ -332,10 +332,14 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return { client: null, error: 'Not signed in.' };
     const wantedNumber = c.twilio_phone_number;
-    const initialRow = { ...clientToRow({ ...c, twilio_phone_number: '' }), owner_id: session.user.id };
+    const initialRow: ClientInsert = {
+      ...clientToRow({ ...c, twilio_phone_number: '' }),
+      business_name: c.name,
+      owner_id: session.user.id,
+    };
     const { data, error } = await supabase
       .from('clients')
-      .insert(initialRow as any)
+      .insert(initialRow)
       .select()
       .single();
     if (error) { console.error('addClient', error); return { client: null, error: error.message || 'Could not save client.' }; }

@@ -228,7 +228,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     const row = { ...clientToRow(c), owner_id: session.user.id };
     const { data, error } = await supabase
       .from('clients')
-      .insert(row)
+      .insert(row as any)
       .select()
       .single();
     if (error) { console.error('addClient', error); return null; }

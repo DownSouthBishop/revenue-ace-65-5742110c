@@ -34,8 +34,8 @@ const rowToClient = (r: ClientRow): Client => ({
   twilio_number_sid: r.twilio_number_sid ?? undefined,
 });
 
-const clientToRow = (c: Partial<Client>) => {
-  const row: Record<string, any> = {};
+const clientToRow = (c: Partial<Client>): Partial<ClientInsert> => {
+  const row: Partial<ClientInsert> = {};
   if (c.name !== undefined) row.business_name = c.name;
   if (c.business_type !== undefined) row.industry = c.business_type;
   if (c.twilio_phone_number !== undefined) row.respondfall_number = c.twilio_phone_number;
@@ -54,24 +54,27 @@ const clientToRow = (c: Partial<Client>) => {
   return row;
 };
 
+type MissedCallWithVm = MissedCallRow & { voicemail_transcript?: string | null };
 
-const callRowToLog = (r: any): CallLog => ({
+const callRowToLog = (r: MissedCallWithVm): CallLog => ({
   id: r.id,
   caller_number: r.caller_number,
   call_status: 'no-answer',
-  received_at: r.called_at,
-  voicemail: !!r.voicemail_url,
-  voicemail_transcript: r.voicemail_url ?? null,
+  received_at: r.called_at ?? new Date().toISOString(),
+  voicemail: !!(r.voicemail_url || r.voicemail_transcript),
+  voicemail_transcript: r.voicemail_transcript ?? null,
 });
 
-const msgRowToLog = (r: any): SmsLog => ({
+type MessageRowWithStatus = MessageRow & { status?: string | null };
+
+const msgRowToLog = (r: MessageRowWithStatus): SmsLog => ({
   id: r.id,
   direction: r.direction === 'inbound' ? 'inbound' : 'outbound',
   to_number: r.direction === 'outbound' ? r.caller_number : '',
   from_number: r.direction === 'inbound' ? r.caller_number : '',
   body: r.body,
   status: r.direction === 'inbound' ? 'received' : (r.status || 'sent'),
-  sent_at: r.sent_at,
+  sent_at: r.sent_at ?? new Date().toISOString(),
   step: r.step_label ?? undefined,
 });
 

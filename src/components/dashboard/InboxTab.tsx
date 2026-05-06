@@ -66,7 +66,7 @@ const stepLabel = (step: string | number | undefined) => {
 };
 
 export function InboxTab({ client }: { client: Client }) {
-  const { smsLog, optOuts, reviewsSent, replyTexts, setReplyText, sendReply, markDone, stopSequence, setConfirmDel, qualFlows, referrals, sendReferralRequest } = useAppStore();
+  const { smsLog, optOuts, reviewsSent, replyTexts, setReplyText, sendReply, markDone, stopSequence, setConfirmDel, qualFlows, referrals, sendReferralRequest, activityLoading } = useAppStore();
   const convos = getConversations(smsLog);
 
   return (

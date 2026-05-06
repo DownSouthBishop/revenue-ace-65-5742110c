@@ -66,7 +66,7 @@ const stepLabel = (step: string | number | undefined) => {
 };
 
 export function InboxTab({ client }: { client: Client }) {
-  const { smsLog, optOuts, reviewsSent, replyTexts, setReplyText, sendReply, markDone, stopSequence, setConfirmDel, qualFlows, referrals, sendReferralRequest } = useAppStore();
+  const { smsLog, optOuts, reviewsSent, replyTexts, setReplyText, sendReply, markDone, stopSequence, setConfirmDel, qualFlows, referrals, sendReferralRequest, activityLoading } = useAppStore();
   const convos = getConversations(smsLog);
 
   return (
@@ -78,7 +78,13 @@ export function InboxTab({ client }: { client: Client }) {
         </button>
       </div>
 
-      {convos.length === 0 ? (
+      {activityLoading && convos.length === 0 ? (
+        <div className="space-y-2">
+          {[0,1,2].map(i => (
+            <div key={i} className="bg-s1 border border-blue rounded-xl p-4 animate-pulse h-[120px]" />
+          ))}
+        </div>
+      ) : convos.length === 0 ? (
         <div className="text-center py-12 px-5 bg-s1 border border-dashed border-blue-2 rounded-xl">
           <div className="text-4xl mb-3">💬</div>
           <div className="text-[15px] font-display font-bold text-foreground mb-2">No conversations yet</div>

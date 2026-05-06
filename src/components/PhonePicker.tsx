@@ -24,6 +24,9 @@ export const PhonePicker = forwardRef<HTMLDivElement, { onSelect: (num: string) 
     return (
       <div ref={ref} className="bg-3 border border-blue-2 rounded-xl p-4">
         <div className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] mb-1.5">Search Available Numbers</div>
+        <div className="text-[10px] font-mono text-t3/80 mb-2 leading-relaxed">
+          Numbers shown are real-time examples. The number you select will be provisioned to your account at checkout.
+        </div>
         <div className="flex gap-2 mb-3">
           <input
             className="flex-1 bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--sky-dim))]"

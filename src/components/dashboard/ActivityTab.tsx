@@ -14,7 +14,7 @@ function formatTime(iso: string) {
 }
 
 export function ActivityTab({ client }: { client: Client }) {
-  const { callLogs, smsLog, simulateCall, setConfirmDel, vmailOpen, toggleVmail } = useAppStore();
+  const { callLogs, smsLog, simulateCall, setConfirmDel, vmailOpen, toggleVmail, activityLoading } = useAppStore();
   const [testing, setTesting] = useState(false);
 
   const handleTestSetup = async () => {
@@ -64,7 +64,13 @@ export function ActivityTab({ client }: { client: Client }) {
         </div>
       </div>
 
-      {merged.length === 0 ? (
+      {activityLoading && merged.length === 0 ? (
+        <div className="space-y-2">
+          {[0,1,2].map(i => (
+            <div key={i} className="bg-s1 border border-blue rounded-[10px] p-3 sm:p-4 animate-pulse h-[72px]" />
+          ))}
+        </div>
+      ) : merged.length === 0 ? (
         <div className="text-center py-12 px-5 bg-s1 border border-dashed border-blue-2 rounded-xl">
           <div className="text-4xl mb-3">📡</div>
           <div className="text-[15px] font-display font-bold text-foreground mb-2">You're live — waiting for your first call</div>

@@ -234,6 +234,7 @@ export type Database = {
           recording_url: string | null
           sequence_triggered: boolean | null
           transcript: string | null
+          voicemail_transcript: string | null
           voicemail_url: string | null
         }
         Insert: {
@@ -245,6 +246,7 @@ export type Database = {
           recording_url?: string | null
           sequence_triggered?: boolean | null
           transcript?: string | null
+          voicemail_transcript?: string | null
           voicemail_url?: string | null
         }
         Update: {
@@ -256,6 +258,7 @@ export type Database = {
           recording_url?: string | null
           sequence_triggered?: boolean | null
           transcript?: string | null
+          voicemail_transcript?: string | null
           voicemail_url?: string | null
         }
         Relationships: [
@@ -387,6 +390,7 @@ export type Database = {
           send_at: string
           status: string
           step_label: string | null
+          to_number: string | null
         }
         Insert: {
           attempts?: number
@@ -399,6 +403,7 @@ export type Database = {
           send_at: string
           status?: string
           step_label?: string | null
+          to_number?: string | null
         }
         Update: {
           attempts?: number
@@ -411,6 +416,7 @@ export type Database = {
           send_at?: string
           status?: string
           step_label?: string | null
+          to_number?: string | null
         }
         Relationships: []
       }

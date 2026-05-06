@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { Client } from '@/types/respondfall';
+import type { Database } from '@/integrations/supabase/types';
+
+type SystemHealthRow = Database['public']['Tables']['system_health']['Row'];
 
 export function SystemHealthCard({ client }: { client: Client }) {
-  const [h, setH] = useState<any>(null);
+  const [h, setH] = useState<SystemHealthRow | null>(null);
   const [pending, setPending] = useState(0);
   useEffect(() => {
     let active = true;
@@ -40,7 +44,7 @@ export async function exportLeadsCSV(clientId: string, businessName: string) {
     supabase.from('messages').select('*').eq('client_id', clientId).order('sent_at', { ascending: true }),
   ]);
   const rows = [['type', 'caller', 'direction', 'body_or_transcript', 'timestamp']];
-  (calls.data ?? []).forEach((c: any) => rows.push(['missed_call', c.caller_number, '', (c.transcript || '').replace(/\n/g, ' '), c.called_at]));
+  (calls.data ?? []).forEach((c: any) => rows.push(['missed_call', c.caller_number, '', (c.voicemail_transcript || c.transcript || '').replace(/\n/g, ' '), c.called_at]));
   (msgs.data ?? []).forEach((m: any) => rows.push(['sms', m.caller_number, m.direction, (m.body || '').replace(/\n/g, ' '), m.sent_at]));
   const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
@@ -62,7 +66,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 export async function enablePushNotifications() {
   if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-    alert('Push notifications are not supported in this browser.');
+    toast.error('Push notifications are not supported in this browser.');
     return false;
   }
   const perm = await Notification.requestPermission();

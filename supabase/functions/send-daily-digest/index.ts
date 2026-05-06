@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     });
   }
   const from = Deno.env.get('RESEND_FROM') || 'Respondfall <onboarding@resend.dev>';
-  const dashboardUrl = Deno.env.get('APP_URL') || 'https://revenue-ace-65.lovable.app';
+  const dashboardUrl = Deno.env.get('APP_URL') ?? 'https://app.respondfall.com';
 
   const sb = createClient(
     Deno.env.get('SUPABASE_URL')!,

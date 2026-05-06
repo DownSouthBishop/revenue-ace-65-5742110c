@@ -2,12 +2,19 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Client, CallLog, SmsLog, PhoneNumber, TabId, PageId, AuthMode, QualificationFlow, QualReason, Referral } from '@/types/respondfall';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
 
-const STOP_KEYWORDS = new Set(['STOP', 'STOP.', 'UNSUBSCRIBE', 'CANCEL', 'QUIT']);
-const isStopKeyword = (body: string) => STOP_KEYWORDS.has((body || '').trim().toUpperCase());
+type ClientRow = Database['public']['Tables']['clients']['Row'];
+type ClientInsert = Database['public']['Tables']['clients']['Insert'];
+type MissedCallRow = Database['public']['Tables']['missed_calls']['Row'];
+type MessageRow = Database['public']['Tables']['messages']['Row'];
+
+export const STOP_KEYWORDS = new Set(['STOP', 'STOP.', 'UNSUBSCRIBE', 'CANCEL', 'QUIT']);
+export const isStopKeyword = (body: string) => STOP_KEYWORDS.has((body || '').trim().toUpperCase());
 
 // Map a DB row from public.clients to the frontend Client shape
-const rowToClient = (r: any): Client => ({
+const rowToClient = (r: ClientRow): Client => ({
   id: r.id,
   name: r.business_name ?? '',
   business_type: r.industry ?? 'general',

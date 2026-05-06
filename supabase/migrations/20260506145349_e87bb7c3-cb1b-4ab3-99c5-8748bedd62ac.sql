@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS system_health_client_id_unique ON public.system_health(client_id);

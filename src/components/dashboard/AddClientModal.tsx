@@ -77,7 +77,7 @@ export function AddClientModal() {
 
         <div className="flex gap-2.5 mt-5">
           <button className="flex-1 py-2.5 rounded-lg border border-blue-2 bg-transparent text-t2 font-display font-bold text-sm tracking-[.06em] uppercase cursor-pointer hover:bg-s2 transition-all active:scale-[0.98]" onClick={() => setShowAddModal(false)}>Cancel</button>
-          <button className="flex-[2] py-2.5 rounded-lg gradient-sky text-primary-foreground border-none font-display font-bold text-sm tracking-[.06em] uppercase cursor-pointer glow-sky hover:-translate-y-px transition-all active:scale-[0.98]" onClick={handleAdd}>⚡ DEPLOY CLIENT</button>
+          <button disabled={saving} className="flex-[2] py-2.5 rounded-lg gradient-sky text-primary-foreground border-none font-display font-bold text-sm tracking-[.06em] uppercase cursor-pointer glow-sky hover:-translate-y-px transition-all active:scale-[0.98] disabled:opacity-50" onClick={handleAdd}>{saving ? '◌ DEPLOYING...' : '⚡ DEPLOY CLIENT'}</button>
         </div>
       </div>
     </div>

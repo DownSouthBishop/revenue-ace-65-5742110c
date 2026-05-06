@@ -141,9 +141,9 @@ interface AppState {
   configSaved: boolean;
 
   // Actions
-  addClient: (c: Omit<Client, 'id'>) => Promise<Client | null>;
+  addClient: (c: Omit<Client, 'id'>) => Promise<{ client: Client | null; error?: string }>;
   deleteClient: (id: string) => Promise<void>;
-  updateClient: (id: string, data: Partial<Client>) => Promise<void>;
+  updateClient: (id: string, data: Partial<Client>) => Promise<{ error?: string }>;
   loadClients: () => Promise<void>;
   loadActivityForClient: (clientId: string) => Promise<void>;
   subscribeActivity: (clientId: string) => void;
@@ -291,8 +291,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
 
   addClient: async (c) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return null;
-    // Insert without respondfall_number first; provision via Twilio after insert.
+    if (!session) return { client: null, error: 'Not signed in.' };
     const wantedNumber = c.twilio_phone_number;
     const initialRow = { ...clientToRow({ ...c, twilio_phone_number: '' }), owner_id: session.user.id };
     const { data, error } = await supabase
@@ -300,17 +299,17 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       .insert(initialRow as any)
       .select()
       .single();
-    if (error) { console.error('addClient', error); return null; }
+    if (error) { console.error('addClient', error); return { client: null, error: error.message || 'Could not save client.' }; }
     let newClient = rowToClient(data);
     if (wantedNumber) {
       const { data: buy, error: buyErr } = await supabase.functions.invoke('twilio-buy-number', {
         body: { phoneNumber: wantedNumber, clientId: newClient.id },
       });
-      if (buyErr || buy?.error) {
-        console.error('twilio-buy-number', buyErr || buy?.error);
-        // Rollback: delete the orphaned client row
+      const twilioErr = buyErr?.message || buy?.error;
+      if (twilioErr) {
+        console.error('twilio-buy-number', twilioErr);
         await supabase.from('clients').delete().eq('id', newClient.id);
-        return null;
+        return { client: null, error: `Twilio: ${twilioErr}` };
       }
       newClient = { ...newClient, twilio_phone_number: buy.phoneNumber };
     }
@@ -320,7 +319,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       showAddModal: false,
       tab: 'activity',
     }));
-    return newClient;
+    return { client: newClient };
   },
 
   deleteClient: async (id) => {
@@ -343,11 +342,12 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       .from('clients')
       .update(clientToRow(data))
       .eq('id', id);
-    if (error) { console.error('updateClient', error); return; }
+    if (error) { console.error('updateClient', error); return { error: error.message || 'Update failed.' }; }
     set((s) => ({
       clients: s.clients.map(c => c.id === id ? { ...c, ...data } : c),
       configSaved: true,
     }));
+    return {};
   },
 
   getActiveClient: () => {

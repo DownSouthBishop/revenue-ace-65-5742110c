@@ -21,7 +21,7 @@ export default function OnboardPage() {
     } else if (obStep === 2) {
       if (!obForm.forward_from_number.trim()) { setErr('Your business phone number is required.'); return; }
       setSaving(true);
-      const result = await addClient({
+      const { client, error } = await addClient({
         name: obForm.name,
         business_type: obForm.business_type,
         twilio_phone_number: obForm.selectedPhoneNumber,
@@ -36,7 +36,7 @@ export default function OnboardPage() {
         is_active: true,
       });
       setSaving(false);
-      if (!result) { setErr('Failed to save client. Please try again.'); return; }
+      if (!client) { setErr(error || 'Failed to save client. Please try again.'); return; }
       setObStep(3);
     } else {
       setPage('dashboard');
@@ -187,7 +187,7 @@ export default function OnboardPage() {
               <button className="flex-1 py-3 rounded-lg border border-blue-2 bg-transparent text-t2 font-display text-sm font-bold tracking-[.06em] uppercase cursor-pointer hover:bg-s2 hover:text-foreground transition-all active:scale-[0.98]" onClick={() => setObStep(obStep - 1)}>← Back</button>
             )}
             <button className="flex-[2] py-3 rounded-lg gradient-sky text-primary-foreground border-none font-display text-sm font-bold tracking-[.06em] uppercase cursor-pointer glow-sky hover:-translate-y-px transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]" onClick={handleNext} disabled={saving}>
-              {saving ? '◌ DEPLOYING...' : obStep === 3 ? '🚀 LAUNCH DASHBOARD' : 'CONTINUE →'}
+              {saving ? (obStep === 2 ? '◌ CLAIMING YOUR NUMBER...' : '◌ DEPLOYING...') : obStep === 3 ? '🚀 LAUNCH DASHBOARD' : 'CONTINUE →'}
             </button>
           </div>
         </div>

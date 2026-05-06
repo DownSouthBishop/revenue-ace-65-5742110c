@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useAppStore } from '@/store/appStore';
 import { PhonePicker } from '@/components/PhonePicker';
 
@@ -22,7 +23,7 @@ export function AddClientModal() {
       alert('Business number must be in E.164 format (e.g. +15551234567).'); return;
     }
     setSaving(true);
-    const result = await addClient({
+    const { client, error } = await addClient({
       name,
       business_type: type,
       twilio_phone_number: selectedPhone,
@@ -37,7 +38,8 @@ export function AddClientModal() {
       is_active: true,
     });
     setSaving(false);
-    if (!result) alert('Failed to save client. Please try again.');
+    if (!client) toast.error(error || 'Failed to save client. Please try again.');
+    else toast.success('Client deployed');
   };
 
   return (

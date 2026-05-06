@@ -31,6 +31,8 @@ export type Database = {
           send_delay_seconds: number | null
           sms_template: string | null
           system_active: boolean | null
+          timezone: string
+          twilio_number_sid: string | null
           twilio_sid: string | null
         }
         Insert: {
@@ -49,6 +51,8 @@ export type Database = {
           send_delay_seconds?: number | null
           sms_template?: string | null
           system_active?: boolean | null
+          timezone?: string
+          twilio_number_sid?: string | null
           twilio_sid?: string | null
         }
         Update: {
@@ -67,6 +71,8 @@ export type Database = {
           send_delay_seconds?: number | null
           sms_template?: string | null
           system_active?: boolean | null
+          timezone?: string
+          twilio_number_sid?: string | null
           twilio_sid?: string | null
         }
         Relationships: [
@@ -172,27 +178,36 @@ export type Database = {
       }
       missed_calls: {
         Row: {
+          call_sid: string | null
           called_at: string | null
           caller_number: string
           client_id: string
           id: string
+          recording_url: string | null
           sequence_triggered: boolean | null
+          transcript: string | null
           voicemail_url: string | null
         }
         Insert: {
+          call_sid?: string | null
           called_at?: string | null
           caller_number: string
           client_id: string
           id?: string
+          recording_url?: string | null
           sequence_triggered?: boolean | null
+          transcript?: string | null
           voicemail_url?: string | null
         }
         Update: {
+          call_sid?: string | null
           called_at?: string | null
           caller_number?: string
           client_id?: string
           id?: string
+          recording_url?: string | null
           sequence_triggered?: boolean | null
+          transcript?: string | null
           voicemail_url?: string | null
         }
         Relationships: [
@@ -204,6 +219,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      opt_outs: {
+        Row: {
+          caller_number: string
+          client_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          caller_number: string
+          client_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          caller_number?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -263,6 +299,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scheduled_messages: {
+        Row: {
+          attempts: number
+          body: string
+          caller_number: string
+          client_id: string
+          created_at: string
+          id: string
+          last_error: string | null
+          send_at: string
+          status: string
+          step_label: string | null
+        }
+        Insert: {
+          attempts?: number
+          body: string
+          caller_number: string
+          client_id: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          send_at: string
+          status?: string
+          step_label?: string | null
+        }
+        Update: {
+          attempts?: number
+          body?: string
+          caller_number?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          send_at?: string
+          status?: string
+          step_label?: string | null
+        }
+        Relationships: []
       }
       system_health: {
         Row: {

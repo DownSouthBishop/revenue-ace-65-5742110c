@@ -13,7 +13,11 @@ export interface Client {
   google_review_link: string;
   is_active: boolean;
   timezone?: string;
+  daily_sms_cap?: number;
+  forward_timeout_seconds?: number;
+  twilio_number_sid?: string;
 }
+
 
 export interface CallLog {
   id: string;

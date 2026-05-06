@@ -18,9 +18,12 @@ const rowToClient = (r: any): Client => ({
   booking_link: r.booking_link ?? '',
   google_review_link: r.google_review_link ?? '',
   is_active: r.system_active ?? true,
+  timezone: r.timezone ?? 'America/New_York',
+  daily_sms_cap: r.daily_sms_cap ?? 200,
+  forward_timeout_seconds: r.forward_timeout_seconds ?? 18,
+  twilio_number_sid: r.twilio_number_sid ?? undefined,
 });
 
-// Map frontend Client fields → DB column names
 const clientToRow = (c: Partial<Client>) => {
   const row: Record<string, any> = {};
   if (c.name !== undefined) row.business_name = c.name;
@@ -35,8 +38,12 @@ const clientToRow = (c: Partial<Client>) => {
   if (c.booking_link !== undefined) row.booking_link = c.booking_link;
   if (c.google_review_link !== undefined) row.google_review_link = c.google_review_link;
   if (c.is_active !== undefined) row.system_active = c.is_active;
+  if (c.timezone !== undefined) row.timezone = c.timezone;
+  if (c.daily_sms_cap !== undefined) row.daily_sms_cap = c.daily_sms_cap;
+  if (c.forward_timeout_seconds !== undefined) row.forward_timeout_seconds = c.forward_timeout_seconds;
   return row;
 };
+
 
 const callRowToLog = (r: any): CallLog => ({
   id: r.id,
@@ -167,7 +174,7 @@ interface AppState {
   refreshDailyStats: () => void;
 }
 
-export const useAppStore = create<AppState>()((set, get) => ({
+export const useAppStore = create<AppState>()(persist((set, get) => ({
   page: 'auth',
   setPage: (p) => set({ page: p }),
 
@@ -310,6 +317,11 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   deleteClient: async (id) => {
+    const client = get().clients.find(c => c.id === id);
+    if (client?.twilio_number_sid) {
+      try { await supabase.functions.invoke('twilio-release-number', { body: { numberSid: client.twilio_number_sid } }); }
+      catch (e) { console.warn('twilio release failed', e); }
+    }
     const { error } = await supabase.from('clients').delete().eq('id', id);
     if (error) { console.error('deleteClient', error); return; }
     set((s) => {
@@ -702,4 +714,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
       set({ phoneSearching: false, phoneResults: results });
     }, 800);
   },
+}), {
+  name: 'respondfall-app',
+  partialize: (s) => ({ activeClientId: s.activeClientId, sidebarOpen: s.sidebarOpen, tab: s.tab }),
 }));
+

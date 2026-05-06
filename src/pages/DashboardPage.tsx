@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
+import { supabase } from '@/integrations/supabase/client';
 import { EagleLogo } from '@/components/EagleLogo';
 import { ActivityTab } from '@/components/dashboard/ActivityTab';
 import { InboxTab } from '@/components/dashboard/InboxTab';
@@ -24,11 +25,12 @@ export default function DashboardPage() {
   const {
     clients, activeClientId, setActiveClientId, tab, setTab,
     sidebarOpen, toggleSidebar, setShowAddModal, showAddModal, confirmDel,
-    setPage, smsLog, mobileMenuOpen, setMobileMenuOpen, dailyStats,
+    smsLog, mobileMenuOpen, setMobileMenuOpen,
     loadActivityForClient, subscribeActivity, unsubscribeActivity,
   } = useAppStore();
 
   const client = clients.find(c => c.id === activeClientId) || clients[0];
+  const [stats30, setStats30] = useState({ missed: 0, smsSent: 0, missedToday: 0, smsToday: 0 });
 
   useEffect(() => {
     if (!activeClientId) return;
@@ -36,6 +38,20 @@ export default function DashboardPage() {
     subscribeActivity(activeClientId);
     return () => unsubscribeActivity();
   }, [activeClientId, loadActivityForClient, subscribeActivity, unsubscribeActivity]);
+
+  useEffect(() => {
+    if (!activeClientId) return;
+    const since30 = new Date(Date.now() - 30 * 86400000).toISOString();
+    const sinceToday = new Date(); sinceToday.setHours(0, 0, 0, 0);
+    Promise.all([
+      supabase.from('missed_calls').select('id', { count: 'exact', head: true }).eq('client_id', activeClientId).gte('called_at', since30),
+      supabase.from('messages').select('id', { count: 'exact', head: true }).eq('client_id', activeClientId).eq('direction', 'outbound').gte('sent_at', since30),
+      supabase.from('missed_calls').select('id', { count: 'exact', head: true }).eq('client_id', activeClientId).gte('called_at', sinceToday.toISOString()),
+      supabase.from('messages').select('id', { count: 'exact', head: true }).eq('client_id', activeClientId).eq('direction', 'outbound').gte('sent_at', sinceToday.toISOString()),
+    ]).then(([a, b, c, d]) => setStats30({
+      missed: a.count ?? 0, smsSent: b.count ?? 0, missedToday: c.count ?? 0, smsToday: d.count ?? 0,
+    }));
+  }, [activeClientId, smsLog.length]);
 
   if (!client) return null;
 
@@ -105,7 +121,7 @@ export default function DashboardPage() {
                 <div className="text-xs font-medium text-foreground">Agency Owner</div>
                 <div className="text-[10px] font-mono text-ember tracking-[.06em]">SkyforgeAI Partner</div>
               </div>
-              <button className="w-full bg-transparent border border-blue rounded-md text-t3 py-1.5 cursor-pointer text-[11px] font-mono text-center hover:border-blue-2 hover:text-foreground transition-all" onClick={() => setPage('auth')}>Logout</button>
+              <button className="w-full bg-transparent border border-blue rounded-md text-t3 py-1.5 cursor-pointer text-[11px] font-mono text-center hover:border-blue-2 hover:text-foreground transition-all" onClick={() => supabase.auth.signOut()}>Logout</button>
             </div>
           </div>
         </div>
@@ -173,7 +189,7 @@ export default function DashboardPage() {
               {sidebarOpen ? '◀' : '▶'}
             </button>
             {sidebarOpen && (
-              <button className="flex-1 bg-transparent border border-blue rounded-md text-t3 py-1.5 cursor-pointer text-[11px] font-mono text-center hover:border-blue-2 hover:text-foreground transition-all" onClick={() => setPage('auth')}>
+              <button className="flex-1 bg-transparent border border-blue rounded-md text-t3 py-1.5 cursor-pointer text-[11px] font-mono text-center hover:border-blue-2 hover:text-foreground transition-all" onClick={() => supabase.auth.signOut()}>
                 Logout
               </button>
             )}
@@ -199,10 +215,10 @@ export default function DashboardPage() {
         {/* Stats row */}
         <div className="px-4 lg:px-6 pt-3 lg:pt-4 grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 flex-shrink-0">
           {[
-            { label: 'Missed Today', value: String(dailyStats.missed), sub: 'Captured & sequenced', cls: 'text-sky' },
-            { label: 'SMS Sent Today', value: String(dailyStats.smsSent), sub: 'All sequence steps', cls: '' },
-            { label: 'Missed · 30 Days', value: '47', sub: '89 SMS total', cls: '' },
-            { label: 'Revenue Protected', value: `$${(47 * client.avg_job_value).toLocaleString()}`, sub: `47 × $${client.avg_job_value}`, cls: 'text-ember' },
+            { label: 'Missed Today', value: String(stats30.missedToday), sub: 'Captured & sequenced', cls: 'text-sky' },
+            { label: 'SMS Sent Today', value: String(stats30.smsToday), sub: 'All sequence steps', cls: '' },
+            { label: 'Missed · 30 Days', value: String(stats30.missed), sub: `${stats30.smsSent} SMS total`, cls: '' },
+            { label: 'Revenue Protected', value: `$${(stats30.missed * client.avg_job_value).toLocaleString()}`, sub: `${stats30.missed} × $${client.avg_job_value}`, cls: 'text-ember' },
           ].map((s, i) => (
             <div key={i} className="bg-s1 border border-blue rounded-xl p-3 lg:p-4 relative overflow-hidden group hover:border-blue-2 hover:-translate-y-0.5 transition-all">
               <div className="text-[9px] lg:text-[10px] font-mono text-t3 uppercase tracking-[.1em] mb-1.5 lg:mb-2.5">{s.label}</div>

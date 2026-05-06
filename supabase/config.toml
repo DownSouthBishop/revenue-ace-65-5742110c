@@ -2,3 +2,9 @@ project_id = "jtpvjwgcunvcnkhmrbdg"
 
 [functions.twilio-webhook]
 verify_jwt = false
+
+[functions.twilio-sms-webhook]
+verify_jwt = false
+
+[functions.sequence-runner]
+verify_jwt = false

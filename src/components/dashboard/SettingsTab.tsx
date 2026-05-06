@@ -43,8 +43,41 @@ export const SettingsTab = forwardRef<HTMLDivElement, { client: Client }>(
 
     return (
       <div ref={ref}>
+        <SystemHealthCard client={client} />
+
+        <div className="bg-s1 border border-blue rounded-xl p-5 mb-3.5">
+          <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Operations</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Timezone (for blackout)</label>
+              <select className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none cursor-pointer" value={tz} onChange={e => setTz(e.target.value)}>
+                {TIMEZONES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Daily SMS Cap</label>
+              <input type="number" min={10} max={5000} className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={cap} onChange={e => setCap(parseInt(e.target.value) || 200)} />
+            </div>
+            <div>
+              <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Forward Ring Time (s)</label>
+              <input type="number" min={5} max={45} className="w-full bg-3 border border-blue rounded-lg text-foreground text-[13px] px-3 py-2.5 outline-none focus:border-primary" value={fwdTimeout} onChange={e => setFwdTimeout(parseInt(e.target.value) || 18)} />
+            </div>
+            <div className="flex items-end gap-2">
+              <label className="flex items-center gap-2 cursor-pointer text-[13px] text-foreground py-2">
+                <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} className="w-4 h-4 accent-primary" />
+                System Active (sends SMS automatically)
+              </label>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <button onClick={() => exportLeadsCSV(client.id, client.name)} aria-label="Export leads as CSV" className="bg-s2 border border-blue rounded-md text-t2 text-[11px] font-mono px-3 py-2 cursor-pointer hover:text-sky hover:border-primary transition-all">⬇ Export Leads CSV</button>
+            <button onClick={enablePushNotifications} aria-label="Enable browser notifications" className="bg-s2 border border-blue rounded-md text-t2 text-[11px] font-mono px-3 py-2 cursor-pointer hover:text-sky hover:border-primary transition-all">🔔 Enable Notifications</button>
+          </div>
+        </div>
+
         <div className="bg-s1 border border-blue rounded-xl p-5 mb-3.5">
           <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Business Profile</div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="sm:col-span-2">
               <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Business Name</label>

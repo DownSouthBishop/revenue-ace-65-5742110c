@@ -55,6 +55,28 @@ export function ConnectTab({ client }: { client: Client }) {
         )}
       </div>
 
+      <div className="bg-s1 border border-blue rounded-xl p-4 sm:p-5 mb-3.5">
+        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Twilio Webhook URL</div>
+        <div className="text-[12px] text-t2 mb-2.5 leading-relaxed">
+          Paste this URL into your Twilio phone number's <strong className="text-sky">"A CALL COMES IN"</strong> webhook (HTTP POST) so missed calls trigger your SMS sequence.
+        </div>
+        {(() => {
+          const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/twilio-webhook?client_id=${client.id}`;
+          return (
+            <div
+              className="bg-background border border-blue-2 rounded-lg p-3 font-mono text-[12px] text-sky cursor-pointer flex justify-between items-center gap-3 hover:border-primary transition-all"
+              onClick={() => copyText(url, 'webhook')}
+            >
+              <span className="break-all">{url}</span>
+              <span className="text-[10px] text-t3 flex-shrink-0">{copied === 'webhook' ? '✓ copied' : 'tap to copy'}</span>
+            </div>
+          );
+        })()}
+        <div className="text-[11px] text-t3 font-mono mt-2 leading-relaxed">
+          In Twilio Console → Phone Numbers → your number → Voice & Fax → A Call Comes In → set to <strong>Webhook</strong>, paste URL, method <strong>HTTP POST</strong>.
+        </div>
+      </div>
+
       <div className="bg-s1 border border-blue rounded-xl p-4 sm:p-5">
         <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Conditional Call Forwarding Setup</div>
         <div className="bg-sky-dim border border-blue-2 rounded-lg p-3 text-xs text-t2 mb-4 leading-relaxed border-l-[3px] border-l-primary">

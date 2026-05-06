@@ -12,6 +12,7 @@ export interface Client {
   booking_link: string;
   google_review_link: string;
   is_active: boolean;
+  timezone?: string;
 }
 
 export interface CallLog {

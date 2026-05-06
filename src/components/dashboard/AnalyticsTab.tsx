@@ -1,15 +1,29 @@
+import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
+import { supabase } from '@/integrations/supabase/client';
 import type { Client } from '@/types/respondfall';
 
 interface Stats30 { missed: number; smsSent: number; missedToday: number; smsToday: number }
 
+const PLAN_PRICE = 149; // Growth plan baseline for ROI calc
+
 export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Stats30 }) {
   const { optOuts } = useAppStore();
+  const [stats7, setStats7] = useState({ missed: 0, sms: 0 });
   const m30 = stats30.missed;
   const s30 = stats30.smsSent;
   const rev30 = m30 * client.avg_job_value;
-  const s7 = 0; // 7-day stats would need separate fetch; placeholder until implemented
-  const m7 = 0;
+
+  useEffect(() => {
+    if (!client.id) return;
+    const since7 = new Date(Date.now() - 7 * 86400000).toISOString();
+    Promise.all([
+      supabase.from('missed_calls').select('id', { count: 'exact', head: true })
+        .eq('client_id', client.id).gte('called_at', since7),
+      supabase.from('messages').select('id', { count: 'exact', head: true })
+        .eq('client_id', client.id).eq('direction', 'outbound').gte('sent_at', since7),
+    ]).then(([calls, msgs]) => setStats7({ missed: calls.count ?? 0, sms: msgs.count ?? 0 }));
+  }, [client.id]);
 
   return (
     <div>

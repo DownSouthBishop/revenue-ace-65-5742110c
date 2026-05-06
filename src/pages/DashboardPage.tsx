@@ -231,6 +231,20 @@ export default function DashboardPage() {
           <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, hsl(var(--sky-blue)) 30%, hsl(var(--ember)) 70%, transparent)', opacity: 0.22 }} />
         </div>
 
+        {showNotifBanner && (
+          <div className="mx-4 lg:mx-6 mt-3 flex items-center justify-between gap-3 bg-sky-dim border border-blue-2 rounded-xl px-3 lg:px-4 py-2.5">
+            <div className="text-xs lg:text-sm text-foreground font-medium">
+              🔔 Get notified instantly when a call comes in
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button onClick={handleEnableNotifs} className="gradient-sky text-primary-foreground rounded-md px-3 py-1.5 text-[11px] font-mono font-semibold tracking-[.04em] hover:glow-sky transition-all">
+                Enable Notifications
+              </button>
+              <button onClick={dismissNotifBanner} aria-label="Dismiss" className="text-t3 hover:text-foreground text-sm px-2 py-1">✕</button>
+            </div>
+          </div>
+        )}
+
         {/* Stats row */}
         <div className="px-4 lg:px-6 pt-3 lg:pt-4 grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 flex-shrink-0">
           {[

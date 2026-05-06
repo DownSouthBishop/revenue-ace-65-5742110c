@@ -600,20 +600,30 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
 
   phoneResults: [],
   phoneSearching: false,
-  searchPhoneNumbers: (query) => {
+  searchPhoneNumbers: async (query) => {
     set({ phoneSearching: true, phoneResults: [] });
-    setTimeout(() => {
-      const q = query.toLowerCase().replace(/\D/g, '').substring(0, 3);
-      const qStr = query.toLowerCase();
-      let results = DEMO_NUMBERS.filter(n =>
-        (q && n.number.replace(/\D/g, '').substring(1, 4).startsWith(q)) ||
-        n.locality.toLowerCase().includes(qStr) ||
-        n.region.toLowerCase().includes(qStr) ||
-        !query
-      ).slice(0, 6);
-      if (!results.length) results = DEMO_NUMBERS.slice(0, 4);
+    try {
+      const digits = query.replace(/\D/g, '');
+      const isAreaCode = /^\d{3}$/.test(digits.slice(0, 3)) && digits.length <= 3;
+      const { data, error } = await supabase.functions.invoke('twilio-search-numbers', {
+        body: isAreaCode ? { areaCode: digits.slice(0, 3) } : { contains: query || undefined },
+      });
+      if (error || !data?.numbers?.length) {
+        toast.error('Phone number search failed');
+        set({ phoneSearching: false, phoneResults: [] });
+        return;
+      }
+      const results: PhoneNumber[] = data.numbers.map((n: { number: string; locality: string; region: string }) => ({
+        number: n.number,
+        locality: n.locality,
+        region: n.region,
+        price: '',
+      }));
       set({ phoneSearching: false, phoneResults: results });
-    }, 800);
+    } catch {
+      toast.error('Phone number search failed');
+      set({ phoneSearching: false, phoneResults: [] });
+    }
   },
 }), {
   name: 'respondfall-app',

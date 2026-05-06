@@ -152,8 +152,8 @@ interface AppState {
   getActiveClient: () => Client;
 
   simulateCall: () => void;
-  sendReply: (phone: string, text: string) => void;
-  markDone: (phone: string) => void;
+  sendReply: (phone: string, text: string) => Promise<void>;
+  markDone: (phone: string) => Promise<void>;
   stopSequence: (phone: string) => Promise<void>;
 
   deleteActivityItem: (id: string) => Promise<void>;

@@ -68,7 +68,7 @@ export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Sta
         <div className="bg-3 border border-blue rounded-[10px] p-4 text-xs text-t2 leading-loose">
           <div className="font-display text-[15px] text-foreground mb-2">📊 Respondfall AI Weekly Report — {client.name}</div>
           <strong className="text-foreground">Last 30 days:</strong> {m30} missed calls · {s30} SMS sent · <strong className="text-ember">${rev30.toLocaleString()} protected</strong><br />
-          <span className="text-t3 text-[11px]">Respondfall AI · SkyforgeAI · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+          <span className="text-t3 text-[11px]">Respondfall AI · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
         </div>
       </div>
 

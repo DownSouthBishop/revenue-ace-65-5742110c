@@ -27,13 +27,18 @@ export const SettingsTab = forwardRef<HTMLDivElement, { client: Client }>(
     const [fwdTimeout, setFwdTimeout] = useState(client.forward_timeout_seconds ?? 18);
     const [saved, setSaved] = useState(false);
 
-    const save = () => {
-      updateClient(client.id, {
+    const save = async () => {
+      const { error } = await updateClient(client.id, {
         name, business_type: type, avg_job_value: jobVal, sms_template: template,
         send_delay_seconds: delay, blackout_start: bStart, blackout_end: bEnd,
         booking_link: bookLink, google_review_link: reviewLink, forward_from_number: fwdNum,
         timezone: tz, is_active: active, daily_sms_cap: cap, forward_timeout_seconds: fwdTimeout,
       });
+      if (error) {
+        toast.error('Save failed — please try again');
+        return;
+      }
+      toast.success('Settings saved');
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     };

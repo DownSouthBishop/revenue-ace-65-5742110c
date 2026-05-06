@@ -169,9 +169,6 @@ interface AppState {
   phoneSearching: boolean;
   searchPhoneNumbers: (query: string) => void;
 
-  // Cached stats (avoid random on re-render)
-  dailyStats: { missed: number; smsSent: number };
-  refreshDailyStats: () => void;
 }
 
 export const useAppStore = create<AppState>()(persist((set, get) => ({

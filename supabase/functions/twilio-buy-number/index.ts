@@ -25,6 +25,17 @@ Deno.serve(async (req) => {
     const { data: client } = await userSb.from('clients').select('id, owner_id').eq('id', clientId).maybeSingle();
     if (!client || client.owner_id !== userId) return json({ error: 'Forbidden' }, 403);
 
+    // Tier enforcement: phone numbers per tier
+    const adminSbCheck = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { data: subRow } = await adminSbCheck.from('subscriptions').select('tier, status').eq('user_id', userId).maybeSingle();
+    const tier = (subRow && ['active','trialing'].includes(subRow.status)) ? subRow.tier : 'free';
+    const numCaps: Record<string, number> = { free: 1, starter: 1, growth: 5, agency: 50 };
+    const { count: existingNums } = await adminSbCheck.from('clients').select('id', { count: 'exact', head: true })
+      .eq('owner_id', userId).not('twilio_number_sid', 'is', null);
+    if ((existingNums ?? 0) >= (numCaps[tier] ?? 1)) {
+      return json({ error: `Tier "${tier}" allows ${numCaps[tier]} phone number(s). Upgrade to add more.` }, 403);
+    }
+
     const sid = Deno.env.get('TWILIO_ACCOUNT_SID')!;
     const tok = Deno.env.get('TWILIO_AUTH_TOKEN')!;
     const projectRef = (Deno.env.get('SUPABASE_URL') || '').replace('https://', '').split('.')[0];

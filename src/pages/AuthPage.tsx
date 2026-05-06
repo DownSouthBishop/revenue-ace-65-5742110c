@@ -1,27 +1,59 @@
 import { useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { EagleLogo } from '@/components/EagleLogo';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AuthPage() {
-  const { authMode, setAuthMode, setPage, clients } = useAppStore();
+  const { authMode, setAuthMode } = useAppStore();
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
+  const [err, setErr] = useState('');
 
-  const handleSubmit = () => {
-    if (!email.trim()) return;
+  const handleSubmit = async () => {
+    setErr('');
+    setMsg('');
+    if (!email.trim()) {
+      setErr('Email is required.');
+      return;
+    }
+    if (authMode !== 'magic' && !pass) {
+      setErr('Password is required.');
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (authMode === 'magic') {
-        setMsg('Magic link sent! Entering platform...');
-        setTimeout(() => setPage(clients.length > 0 ? 'dashboard' : 'onboard'), 1200);
-        return;
+    try {
+      if (authMode === 'signin') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+        if (error) throw error;
+        // Index.tsx handles routing via onAuthStateChange
+      } else if (authMode === 'signup') {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password: pass,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { full_name: name },
+          },
+        });
+        if (error) throw error;
+        setMsg('Account created! Entering platform...');
+      } else {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: `${window.location.origin}/` },
+        });
+        if (error) throw error;
+        setMsg(`Magic link sent to ${email}. Check your inbox.`);
       }
-      setPage(clients.length > 0 ? 'dashboard' : 'onboard');
-    }, 900);
+    } catch (e: any) {
+      setErr(e?.message || 'Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,7 +76,7 @@ export default function AuthPage() {
             {(['signin', 'signup', 'magic'] as const).map(mode => (
               <button
                 key={mode}
-                onClick={() => setAuthMode(mode)}
+                onClick={() => { setAuthMode(mode); setErr(''); setMsg(''); }}
                 className={`flex-1 py-2 rounded-[7px] border-none cursor-pointer font-display text-[12px] sm:text-[13px] font-semibold tracking-[.04em] transition-all duration-200 ${
                   authMode === mode
                     ? 'gradient-sky text-primary-foreground glow-sky'
@@ -74,6 +106,7 @@ export default function AuthPage() {
                 className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--sky-dim))]"
                 placeholder="you@company.com"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
@@ -86,6 +119,7 @@ export default function AuthPage() {
                   className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--sky-dim))]"
                   placeholder="••••••••"
                   type="password"
+                  autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
                   value={pass}
                   onChange={(e) => setPass(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
@@ -95,6 +129,11 @@ export default function AuthPage() {
             {msg && (
               <div className="bg-success-bg border border-success rounded-lg p-2.5 text-[12px] text-success">
                 ✓ {msg}
+              </div>
+            )}
+            {err && (
+              <div className="bg-[hsl(var(--destructive)/0.08)] border border-destructive/40 rounded-lg p-2.5 text-[12px] text-destructive">
+                ⚠ {err}
               </div>
             )}
             <button

@@ -2,8 +2,10 @@ import { forwardRef, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import type { Client } from '@/types/respondfall';
 import { PhonePicker } from '@/components/PhonePicker';
+import { SystemHealthCard, exportLeadsCSV, enablePushNotifications } from './SystemHealth';
 
 const INDUSTRIES = ['plumbing', 'hvac', 'electrical', 'roofing', 'landscaping', 'cleaning', 'auto_repair', 'restaurant', 'salon', 'real_estate', 'medical', 'other'];
+const TIMEZONES = ['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Phoenix','America/Anchorage','Pacific/Honolulu','UTC'];
 
 export const SettingsTab = forwardRef<HTMLDivElement, { client: Client }>(
   function SettingsTab({ client }, ref) {
@@ -18,6 +20,10 @@ export const SettingsTab = forwardRef<HTMLDivElement, { client: Client }>(
     const [bookLink, setBookLink] = useState(client.booking_link);
     const [reviewLink, setReviewLink] = useState(client.google_review_link);
     const [fwdNum, setFwdNum] = useState(client.forward_from_number);
+    const [tz, setTz] = useState(client.timezone || 'America/New_York');
+    const [active, setActive] = useState(client.is_active);
+    const [cap, setCap] = useState(client.daily_sms_cap ?? 200);
+    const [fwdTimeout, setFwdTimeout] = useState(client.forward_timeout_seconds ?? 18);
     const [saved, setSaved] = useState(false);
 
     const save = () => {
@@ -25,6 +31,7 @@ export const SettingsTab = forwardRef<HTMLDivElement, { client: Client }>(
         name, business_type: type, avg_job_value: jobVal, sms_template: template,
         send_delay_seconds: delay, blackout_start: bStart, blackout_end: bEnd,
         booking_link: bookLink, google_review_link: reviewLink, forward_from_number: fwdNum,
+        timezone: tz, is_active: active, daily_sms_cap: cap, forward_timeout_seconds: fwdTimeout,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);

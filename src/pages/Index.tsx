@@ -8,44 +8,32 @@ import DashboardPage from '@/pages/DashboardPage';
 const Index = () => {
   const page = useAppStore(s => s.page);
   const setPage = useAppStore(s => s.setPage);
+  const loadClients = useAppStore(s => s.loadClients);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Subscribe FIRST so we never miss an event
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const handleSession = async (session: any) => {
       if (!session) {
+        useAppStore.setState({ clients: [], activeClientId: '' });
         setPage('auth');
         return;
       }
-      // Defer DB call to avoid deadlocking inside the listener
-      setTimeout(async () => {
-        const { data: clientRows } = await supabase
-          .from('clients')
-          .select('id')
-          .eq('owner_id', session.user.id)
-          .limit(1);
-        setPage((clientRows?.length ?? 0) > 0 ? 'dashboard' : 'onboard');
-      }, 0);
+      await loadClients();
+      const clients = useAppStore.getState().clients;
+      setPage(clients.length > 0 ? 'dashboard' : 'onboard');
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setTimeout(() => handleSession(session), 0);
     });
 
-    // Then check the existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) {
-        setPage('auth');
-        setChecking(false);
-        return;
-      }
-      const { data: clientRows } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('owner_id', session.user.id)
-        .limit(1);
-      setPage((clientRows?.length ?? 0) > 0 ? 'dashboard' : 'onboard');
+      await handleSession(session);
       setChecking(false);
     });
 
     return () => sub.subscription.unsubscribe();
-  }, [setPage]);
+  }, [setPage, loadClients]);
 
   if (checking) {
     return (

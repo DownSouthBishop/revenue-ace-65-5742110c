@@ -78,6 +78,6 @@ export interface Conversation {
   intents: string[];
 }
 
-export type TabId = 'activity' | 'inbox' | 'sequences' | 'analytics' | 'referrals' | 'config' | 'connect';
+export type TabId = 'activity' | 'inbox' | 'sequences' | 'analytics' | 'referrals' | 'billing' | 'config' | 'connect';
 export type PageId = 'auth' | 'onboard' | 'dashboard';
 export type AuthMode = 'signin' | 'signup' | 'magic';

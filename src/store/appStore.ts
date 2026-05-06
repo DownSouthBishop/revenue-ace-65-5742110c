@@ -1,6 +1,42 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Client, CallLog, SmsLog, PhoneNumber, TabId, PageId, AuthMode, QualificationFlow, QualReason, Referral } from '@/types/respondfall';
+import { supabase } from '@/integrations/supabase/client';
+
+// Map a DB row from public.clients to the frontend Client shape
+const rowToClient = (r: any): Client => ({
+  id: r.id,
+  name: r.business_name ?? '',
+  business_type: r.industry ?? 'general',
+  twilio_phone_number: r.respondfall_number ?? '',
+  forward_from_number: r.business_number ?? '',
+  sms_template: r.sms_template ?? '',
+  avg_job_value: Number(r.avg_job_value ?? 0),
+  blackout_start: r.blackout_start ?? 22,
+  blackout_end: r.blackout_end ?? 7,
+  send_delay_seconds: r.send_delay_seconds ?? 5,
+  booking_link: r.booking_link ?? '',
+  google_review_link: r.google_review_link ?? '',
+  is_active: r.system_active ?? true,
+});
+
+// Map frontend Client fields → DB column names
+const clientToRow = (c: Partial<Client>) => {
+  const row: Record<string, any> = {};
+  if (c.name !== undefined) row.business_name = c.name;
+  if (c.business_type !== undefined) row.industry = c.business_type;
+  if (c.twilio_phone_number !== undefined) row.respondfall_number = c.twilio_phone_number;
+  if (c.forward_from_number !== undefined) row.business_number = c.forward_from_number;
+  if (c.sms_template !== undefined) row.sms_template = c.sms_template;
+  if (c.avg_job_value !== undefined) row.avg_job_value = c.avg_job_value;
+  if (c.blackout_start !== undefined) row.blackout_start = c.blackout_start;
+  if (c.blackout_end !== undefined) row.blackout_end = c.blackout_end;
+  if (c.send_delay_seconds !== undefined) row.send_delay_seconds = c.send_delay_seconds;
+  if (c.booking_link !== undefined) row.booking_link = c.booking_link;
+  if (c.google_review_link !== undefined) row.google_review_link = c.google_review_link;
+  if (c.is_active !== undefined) row.system_active = c.is_active;
+  return row;
+};
 
 const DEMO_NUMBERS: PhoneNumber[] = [
   { number: '+1 (305) 555-0100', locality: 'Miami', region: 'FL', price: '$1.15/mo' },

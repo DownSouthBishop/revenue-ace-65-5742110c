@@ -166,11 +166,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
   setObForm: (f) => set((s) => ({ obForm: { ...s.obForm, ...f } })),
 
-  clients: [
-    { id: 'c1', name: 'Miami Plumbing Co.', business_type: 'plumbing', twilio_phone_number: '+1 (305) 555-0100', forward_from_number: '+13055559999', sms_template: "Hey, {business_name} here — sorry we missed you! Book here: {booking_link}. Reply STOP.", avg_job_value: 300, blackout_start: 22, blackout_end: 7, send_delay_seconds: 5, booking_link: 'https://cal.com/miamiplumbing', google_review_link: 'https://g.page/r/abc/review', is_active: true },
-    { id: 'c2', name: 'South Beach HVAC', business_type: 'hvac', twilio_phone_number: '+1 (786) 555-0203', forward_from_number: '', sms_template: "Hi! South Beach HVAC missed your call — book here: {booking_link}. Reply STOP.", avg_job_value: 450, blackout_start: 21, blackout_end: 8, send_delay_seconds: 3, booking_link: 'https://cal.com/sbhvac', google_review_link: '', is_active: true },
-  ],
-  activeClientId: 'c1',
+  clients: [],
+  activeClientId: '',
   setActiveClientId: (id) => set({ activeClientId: id, tab: 'activity', mobileMenuOpen: false }),
   tab: 'activity',
   setTab: (t) => set({ tab: t, configSaved: false }),

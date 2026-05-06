@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { EagleLogo } from '@/components/EagleLogo';
 import { ActivityTab } from '@/components/dashboard/ActivityTab';

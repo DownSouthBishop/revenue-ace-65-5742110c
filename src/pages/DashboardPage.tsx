@@ -215,10 +215,10 @@ export default function DashboardPage() {
         {/* Stats row */}
         <div className="px-4 lg:px-6 pt-3 lg:pt-4 grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 flex-shrink-0">
           {[
-            { label: 'Missed Today', value: String(dailyStats.missed), sub: 'Captured & sequenced', cls: 'text-sky' },
-            { label: 'SMS Sent Today', value: String(dailyStats.smsSent), sub: 'All sequence steps', cls: '' },
-            { label: 'Missed · 30 Days', value: '47', sub: '89 SMS total', cls: '' },
-            { label: 'Revenue Protected', value: `$${(47 * client.avg_job_value).toLocaleString()}`, sub: `47 × $${client.avg_job_value}`, cls: 'text-ember' },
+            { label: 'Missed Today', value: String(stats30.missedToday), sub: 'Captured & sequenced', cls: 'text-sky' },
+            { label: 'SMS Sent Today', value: String(stats30.smsToday), sub: 'All sequence steps', cls: '' },
+            { label: 'Missed · 30 Days', value: String(stats30.missed), sub: `${stats30.smsSent} SMS total`, cls: '' },
+            { label: 'Revenue Protected', value: `$${(stats30.missed * client.avg_job_value).toLocaleString()}`, sub: `${stats30.missed} × $${client.avg_job_value}`, cls: 'text-ember' },
           ].map((s, i) => (
             <div key={i} className="bg-s1 border border-blue rounded-xl p-3 lg:p-4 relative overflow-hidden group hover:border-blue-2 hover:-translate-y-0.5 transition-all">
               <div className="text-[9px] lg:text-[10px] font-mono text-t3 uppercase tracking-[.1em] mb-1.5 lg:mb-2.5">{s.label}</div>

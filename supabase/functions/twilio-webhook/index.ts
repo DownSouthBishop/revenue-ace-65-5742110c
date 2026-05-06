@@ -145,6 +145,14 @@ async function processMissed(sb: any, client: any, from: string, callSid: string
       client_id: client.id, last_successful_send: new Date().toISOString(),
       consecutive_failures: 0, last_error: null,
     }, { onConflict: 'client_id' });
+    // Increment monthly usage counter
+    if (client.owner_id && tierPeriodStart) {
+      const periodEnd = new Date(tierPeriodStart); periodEnd.setUTCMonth(periodEnd.getUTCMonth() + 1);
+      const { data: existing } = await sb.from('usage_counters').select('id, count')
+        .eq('user_id', client.owner_id).eq('metric', 'sms_sent').eq('period_start', tierPeriodStart).maybeSingle();
+      if (existing) await sb.from('usage_counters').update({ count: existing.count + 1, updated_at: new Date().toISOString() }).eq('id', existing.id);
+      else await sb.from('usage_counters').insert({ user_id: client.owner_id, client_id: client.id, metric: 'sms_sent', period_start: tierPeriodStart, period_end: periodEnd.toISOString(), count: 1 });
+    }
     // Schedule step-2 follow-up in 4 hours
     const sendAt = new Date(Date.now() + 4 * 3600 * 1000).toISOString();
     const followUp = tplVars('Hey, still hoping to connect — {business_name} has openings. Book: {booking_link}. Reply STOP.', {

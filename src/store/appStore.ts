@@ -168,7 +168,7 @@ interface AppState {
   // Phone search
   phoneResults: PhoneNumber[];
   phoneSearching: boolean;
-  searchPhoneNumbers: (query: string) => void;
+  searchPhoneNumbers: (query: string) => Promise<void>;
 
 }
 

@@ -3,6 +3,9 @@ import { persist } from 'zustand/middleware';
 import type { Client, CallLog, SmsLog, PhoneNumber, TabId, PageId, AuthMode, QualificationFlow, QualReason, Referral } from '@/types/respondfall';
 import { supabase } from '@/integrations/supabase/client';
 
+const STOP_KEYWORDS = new Set(['STOP', 'STOP.', 'UNSUBSCRIBE', 'CANCEL', 'QUIT']);
+const isStopKeyword = (body: string) => STOP_KEYWORDS.has((body || '').trim().toUpperCase());
+
 // Map a DB row from public.clients to the frontend Client shape
 const rowToClient = (r: any): Client => ({
   id: r.id,
@@ -222,16 +225,21 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
   configSaved: false,
 
   loadActivityForClient: async (clientId: string) => {
-    if (!clientId) { set({ callLogs: [], smsLog: [] }); return; }
+    if (!clientId) { set({ callLogs: [], smsLog: [], optOuts: [] }); return; }
     const [calls, msgs] = await Promise.all([
       supabase.from('missed_calls').select('*').eq('client_id', clientId).order('called_at', { ascending: false }).limit(200),
       supabase.from('messages').select('*').eq('client_id', clientId).order('sent_at', { ascending: true }).limit(500),
     ]);
     if (calls.error) console.error('loadActivityForClient calls', calls.error);
     if (msgs.error) console.error('loadActivityForClient messages', msgs.error);
+    const smsLog = (msgs.data ?? []).map(msgRowToLog);
+    const optOuts = Array.from(new Set(
+      smsLog.filter(m => m.direction === 'inbound' && isStopKeyword(m.body)).map(m => m.from_number)
+    ));
     set({
       callLogs: (calls.data ?? []).map(callRowToLog),
-      smsLog: (msgs.data ?? []).map(msgRowToLog),
+      smsLog,
+      optOuts,
     });
   },
 
@@ -254,7 +262,14 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` },
         (payload) => {
           const log = msgRowToLog(payload.new);
-          set((s) => s.smsLog.find(m => m.id === log.id) ? {} : { smsLog: [...s.smsLog, log] });
+          set((s) => {
+            if (s.smsLog.find(m => m.id === log.id)) return {};
+            const next: any = { smsLog: [...s.smsLog, log] };
+            if (log.direction === 'inbound' && isStopKeyword(log.body) && !s.optOuts.includes(log.from_number)) {
+              next.optOuts = [...s.optOuts, log.from_number];
+            }
+            return next;
+          });
           if (log.direction === 'inbound') {
             try {
               if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
@@ -380,6 +395,22 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
     set((s) => ({
       callLogs: [newCall, ...s.callLogs],
     }));
+
+    // TCPA: do not send anything to opted-out numbers
+    if (get().optOuts.includes(from)) {
+      const blocked: SmsLog = {
+        id: 's' + Date.now(),
+        direction: 'outbound',
+        from_number: c.twilio_phone_number,
+        to_number: from,
+        body: '[SMS blocked — this number has opted out]',
+        status: 'blocked',
+        sent_at: new Date().toISOString(),
+        step: 'blocked',
+      };
+      set((s) => ({ smsLog: [...s.smsLog, blocked] }));
+      return;
+    }
 
     // Step 1: Initial auto-response
     const body = c.sms_template
@@ -611,6 +642,23 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
   sendReply: (phone, text) => {
     if (!text.trim()) return;
     const c = get().getActiveClient();
+    if (get().optOuts.includes(phone)) {
+      const blocked: SmsLog = {
+        id: 's' + Date.now(),
+        direction: 'outbound',
+        from_number: c.twilio_phone_number,
+        to_number: phone,
+        body: '[SMS blocked — this number has opted out]',
+        status: 'blocked',
+        sent_at: new Date().toISOString(),
+        step: 'blocked',
+      };
+      set((s) => ({
+        smsLog: [...s.smsLog, blocked],
+        replyTexts: { ...s.replyTexts, [phone]: '' },
+      }));
+      return;
+    }
     const sms: SmsLog = {
       id: 's' + Date.now(),
       direction: 'outbound',

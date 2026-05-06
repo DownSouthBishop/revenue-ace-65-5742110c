@@ -224,13 +224,19 @@ export default function DashboardPage() {
               )}
             </div>
           ))}
-          <div
-            className="flex items-center gap-2.5 py-2 px-2.5 rounded-lg cursor-pointer border border-dashed border-blue text-t3 text-xs my-1 hover:border-primary hover:text-sky hover:bg-sky-dim transition-all"
-            onClick={handleAddClient}
-          >
-            <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-lg flex-shrink-0">+</div>
-            {sidebarOpen && <span>Add Client</span>}
-          </div>
+          {(() => {
+            const atLimit = clients.length >= tierByName(tier).clients;
+            return (
+              <div
+                title={atLimit ? 'Upgrade to Growth to add more clients' : ''}
+                className={`flex items-center gap-2.5 py-2 px-2.5 rounded-lg border border-dashed my-1 transition-all ${atLimit ? 'border-blue text-t4 opacity-50 cursor-not-allowed' : 'border-blue text-t3 text-xs cursor-pointer hover:border-primary hover:text-sky hover:bg-sky-dim'}`}
+                onClick={handleAddClient}
+              >
+                <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-lg flex-shrink-0">+</div>
+                {sidebarOpen && <span className="text-xs">{atLimit ? 'Upgrade to add' : 'Add Client'}</span>}
+              </div>
+            );
+          })()}
         </div>
 
         <div className="p-2 border-t border-blue">

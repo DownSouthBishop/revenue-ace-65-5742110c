@@ -51,13 +51,37 @@ export async function exportLeadsCSV(clientId: string, businessName: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; ++i) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
 export async function enablePushNotifications() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) {
     alert('Push notifications are not supported in this browser.');
-    return;
+    return false;
   }
   const perm = await Notification.requestPermission();
-  if (perm !== 'granted') return;
-  // Local notifications only (no VAPID server) — show permission was granted
-  alert('Notifications enabled. New leads will appear as system notifications when this tab is open.');
+  if (perm !== 'granted') return false;
+
+  const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+  if ('PushManager' in window && vapidKey) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const existing = await reg.pushManager.getSubscription();
+      if (!existing) {
+        await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        });
+      }
+    } catch (err) {
+      console.warn('Push subscription failed:', err);
+    }
+  }
+  return true;
 }

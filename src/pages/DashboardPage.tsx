@@ -158,7 +158,7 @@ export default function DashboardPage() {
                   <div className="w-1.5 h-1.5 rounded-full bg-success flex-shrink-0 animate-pulse-dot" />
                 </div>
               ))}
-              <div className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg cursor-pointer border border-dashed border-blue text-t3 text-xs my-1 hover:border-primary hover:text-sky hover:bg-sky-dim transition-all" onClick={() => { setShowAddModal(true); setMobileMenuOpen(false); }}>
+              <div className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg cursor-pointer border border-dashed border-blue text-t3 text-xs my-1 hover:border-primary hover:text-sky hover:bg-sky-dim transition-all" onClick={handleAddClient}>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0">+</div>
                 <span>Add Client</span>
               </div>
@@ -217,7 +217,7 @@ export default function DashboardPage() {
           ))}
           <div
             className="flex items-center gap-2.5 py-2 px-2.5 rounded-lg cursor-pointer border border-dashed border-blue text-t3 text-xs my-1 hover:border-primary hover:text-sky hover:bg-sky-dim transition-all"
-            onClick={() => setShowAddModal(true)}
+            onClick={handleAddClient}
           >
             <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-lg flex-shrink-0">+</div>
             {sidebarOpen && <span>Add Client</span>}
@@ -320,6 +320,7 @@ export default function DashboardPage() {
           {tab === 'sequences' && <SequencesTab client={client} />}
           {tab === 'analytics' && <AnalyticsTab client={client} stats30={stats30} />}
           {tab === 'referrals' && <ReferralsTab client={client} />}
+          {tab === 'billing' && <BillingTab />}
           {tab === 'config' && <SettingsTab client={client} />}
           {tab === 'connect' && <ConnectTab client={client} />}
         </div>

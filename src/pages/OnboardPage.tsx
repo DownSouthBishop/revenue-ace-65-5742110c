@@ -123,6 +123,11 @@ export default function OnboardPage() {
                   <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Google Review Link <span className="text-t3">(for post-job review requests)</span></label>
                   <input className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none focus:border-primary" value={obForm.google_review_link} onChange={e => setObForm({ google_review_link: e.target.value })} placeholder="https://g.page/r/.../review" />
                 </div>
+                <div className="sm:col-span-2">
+                  <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Your Current Business Number * <span className="text-t3">(customers call this)</span></label>
+                  <input className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none focus:border-primary" value={obForm.forward_from_number} onChange={e => setObForm({ forward_from_number: e.target.value })} placeholder="+1 (305) 555-9999" />
+                  <div className="text-[11px] text-t3 font-mono mt-1">We'll route unanswered calls from this number to your Respondfall number.</div>
+                </div>
               </div>
             </div>
           )}
@@ -133,11 +138,21 @@ export default function OnboardPage() {
                 <div className="w-7 h-7 rounded-full gradient-sky border border-primary flex items-center justify-center text-xs font-bold text-primary-foreground glow-sky">2</div>
                 Claim Your Dedicated Phone Number
               </div>
+              {tier === 'free' && (
+                <div className="bg-ember-dim border border-ember rounded-lg p-3 text-[12px] text-t2 mb-4 leading-relaxed border-l-[3px] border-l-accent flex items-center justify-between gap-3">
+                  <div>
+                    💡 Your Respondfall number is included on all paid plans starting at <strong className="text-ember">$49/mo</strong>. Numbers are provisioned instantly.
+                  </div>
+                  <button onClick={upgradeNow} className="gradient-sky text-primary-foreground rounded-md px-3 py-1.5 text-[11px] font-mono font-semibold tracking-[.04em] flex-shrink-0 hover:glow-sky transition-all">
+                    Upgrade Now
+                  </button>
+                </div>
+              )}
               <div className="bg-sky-dim border border-blue-2 rounded-lg p-3 text-[12px] text-t2 mb-4 leading-relaxed border-l-[3px] border-l-primary">
                 <strong className="text-sky">No external accounts needed.</strong> Your number is provisioned instantly. Search by area code or city.
               </div>
               <PhonePicker onSelect={(num) => setObForm({ selectedPhoneNumber: num })} selected={obForm.selectedPhoneNumber} />
-              {obForm.selectedPhoneNumber && (
+              {obForm.selectedPhoneNumber ? (
                 <div className="flex items-center gap-2.5 p-3 bg-success-bg border border-success rounded-lg mt-2">
                   <span className="text-lg">✓</span>
                   <div>
@@ -145,12 +160,11 @@ export default function OnboardPage() {
                     <div className="text-[11px] font-mono text-t3">Provisioned · Respondfall Infrastructure</div>
                   </div>
                 </div>
+              ) : (
+                <div className="bg-3 border border-blue rounded-lg p-3 text-[12px] text-t3 mt-2 leading-relaxed">
+                  You can set up your Respondfall number now or add it later in Settings.
+                </div>
               )}
-              <div className="mt-3.5">
-                <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Your Business Phone Number <span className="text-ember">★ Required</span></label>
-                <input className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none focus:border-primary" value={obForm.forward_from_number} onChange={e => setObForm({ forward_from_number: e.target.value })} placeholder="+1 (305) 555-9999" />
-                <div className="text-[11px] text-t3 font-mono mt-1">Enter the number your customers already call. Missed calls will forward to your new Respondfall number.</div>
-              </div>
             </div>
           )}
 

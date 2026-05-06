@@ -65,6 +65,12 @@ Deno.serve(async (req) => {
       twilio_sid: data.sid,
     }).eq('id', clientId);
 
+    await adminSb.from('audit_log').insert({
+      user_id: userId, action: 'twilio.number.purchased',
+      resource_type: 'phone_number', resource_id: data.sid,
+      metadata: { phone_number: data.phone_number, client_id: clientId },
+    });
+
     return json({ phoneNumber: data.phone_number, sid: data.sid });
   } catch (e) {
     return json({ error: String(e) }, 500);

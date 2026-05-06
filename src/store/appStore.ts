@@ -290,7 +290,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` },
         (payload) => {
-          const updated = msgRowToLog(payload.new);
+          const updated = msgRowToLog(payload.new as MessageRowWithStatus);
           set((s) => ({
             smsLog: s.smsLog.map(m => m.id === updated.id ? { ...m, status: updated.status } : m),
           }));

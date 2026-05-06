@@ -8,6 +8,10 @@ verify_jwt = false
 
 [functions.sequence-runner]
 verify_jwt = false
+schedule = "*/5 * * * *"
+
+[functions.send-manual-sms]
+verify_jwt = true
 
 [functions.twilio-sms-status]
 verify_jwt = false

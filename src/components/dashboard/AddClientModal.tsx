@@ -12,11 +12,13 @@ export function AddClientModal() {
   const [bookLink, setBookLink] = useState('');
   const [selectedPhone, setSelectedPhone] = useState('');
 
-  const handleAdd = () => {
+  const [saving, setSaving] = useState(false);
+
+  const handleAdd = async () => {
     if (!name.trim()) { alert('Business name is required.'); return; }
     if (!selectedPhone) { alert('Please claim a phone number for this client.'); return; }
-    addClient({
-      id: 'c' + Date.now(),
+    setSaving(true);
+    const result = await addClient({
       name,
       business_type: type,
       twilio_phone_number: selectedPhone,
@@ -30,6 +32,8 @@ export function AddClientModal() {
       google_review_link: '',
       is_active: true,
     });
+    setSaving(false);
+    if (!result) alert('Failed to save client. Please try again.');
   };
 
   return (

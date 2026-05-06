@@ -74,10 +74,10 @@ export default function OnboardPage() {
     <div className="min-h-[100dvh] flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-[600px]">
         <div className="text-center mb-5 sm:mb-6">
-          <h1 className="font-display text-[22px] sm:text-[26px] font-bold tracking-[.06em] text-foreground">
-            Deploy <span className="text-sky">Respondfall</span>
+          <h1 className="font-display text-[22px] sm:text-[28px] font-bold tracking-[.02em] text-foreground leading-tight">
+            Never Lose a Lead to a Missed Call Again
           </h1>
-          <p className="text-[11px] text-t3 font-mono tracking-[.1em] uppercase">Revenue Recovery System</p>
+          <p className="text-[13px] sm:text-[14px] text-t2 mt-2">Set up takes 3 minutes. We'll text every missed caller automatically.</p>
         </div>
 
         {/* Progress */}
@@ -124,9 +124,9 @@ export default function OnboardPage() {
                   <input className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none focus:border-primary" value={obForm.google_review_link} onChange={e => setObForm({ google_review_link: e.target.value })} placeholder="https://g.page/r/.../review" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Your Current Business Number * <span className="text-t3">(customers call this)</span></label>
-                  <input className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none focus:border-primary" value={obForm.forward_from_number} onChange={e => setObForm({ forward_from_number: e.target.value })} placeholder="+1 (305) 555-9999" />
-                  <div className="text-[11px] text-t3 font-mono mt-1">We'll route unanswered calls from this number to your Respondfall number.</div>
+                  <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Your current business phone number *</label>
+                  <input className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none focus:border-primary" value={obForm.forward_from_number} onChange={e => setObForm({ forward_from_number: e.target.value })} placeholder="The number customers already call you on" />
+                  <div className="text-[11px] text-t3 mt-1">We'll give you a new number to forward this one to — takes 30 seconds in your phone settings.</div>
                 </div>
               </div>
             </div>
@@ -152,7 +152,7 @@ export default function OnboardPage() {
                 </div>
               )}
               <div className="bg-sky-dim border border-blue-2 rounded-lg p-3 text-[12px] text-t2 mb-4 leading-relaxed border-l-[3px] border-l-primary">
-                <strong className="text-sky">No external accounts needed.</strong> Your number is provisioned instantly. Search by area code or city.
+                We'll give you a dedicated number that forwards calls to your business. When a call goes unanswered, we automatically text the caller back within seconds.
               </div>
               <PhonePicker onSelect={(num) => setObForm({ selectedPhoneNumber: num })} selected={obForm.selectedPhoneNumber} />
               {obForm.selectedPhoneNumber ? (
@@ -198,22 +198,25 @@ export default function OnboardPage() {
 
           {obStep === 3 && (
             <div>
-              <div className="flex items-center gap-2.5 font-display text-base sm:text-lg font-bold tracking-[.05em] mb-5">
-                <div className="w-7 h-7 rounded-full gradient-sky border border-primary flex items-center justify-center text-xs font-bold text-primary-foreground glow-sky">4</div>
-                Forward Your Calls — You're Live
+              <div className="font-display text-[22px] sm:text-[26px] font-bold tracking-[.02em] mb-3 text-center">
+                You're live. 🎉
               </div>
-              <div className="bg-success-bg border border-success rounded-lg p-2.5 text-[12px] text-success mb-3.5">✓ Business deployed · SMS system live · Number provisioned</div>
-              <div className="bg-sky-dim border border-blue-2 rounded-lg p-3 text-[12px] text-t2 mb-4 leading-relaxed border-l-[3px] border-l-primary">
-                Set up conditional forwarding so missed calls route to your Respondfall number. <strong className="text-sky">Only unanswered calls</strong> forward — your phone still rings first.
+              <div className="text-[13px] text-t2 leading-relaxed text-center mb-4">
+                From now on, every missed call gets an automatic text-back within <strong className="text-sky">{obForm.send_delay_seconds}</strong> seconds. Forward <strong className="text-foreground">{obForm.forward_from_number || '(your business number)'}</strong> to the number below in your phone settings to activate.
               </div>
-              <div className="bg-s1 border border-blue rounded-xl p-4 mb-3.5">
-                <div className="font-display text-[13px] text-sky tracking-[.06em] mb-2.5">Your Respondfall Number</div>
-                <div className="font-mono text-lg font-semibold text-success">{obForm.selectedPhoneNumber || '(your number)'}</div>
+              <div className="bg-3 border border-blue-2 rounded-lg p-3 mb-3 flex items-center justify-between gap-2">
+                <code className="font-mono text-[15px] text-success break-all">{obForm.selectedPhoneNumber || '(claim a number in Settings)'}</code>
+                {obForm.selectedPhoneNumber && (
+                  <button
+                    onClick={() => navigator.clipboard.writeText(obForm.selectedPhoneNumber)}
+                    className="bg-s2 border border-blue-2 rounded-md text-t2 text-[11px] font-mono px-2.5 py-1.5 cursor-pointer hover:text-sky hover:border-primary transition-all flex-shrink-0"
+                  >
+                    Copy
+                  </button>
+                )}
               </div>
-              <div className="bg-ember-dim border border-ember rounded-lg p-3 text-[12px] text-t2 leading-relaxed border-l-[3px] border-l-accent">
-                <strong className="text-ember">iPhone / Android:</strong> Open Phone app and dial:<br />
-                <span className="font-mono text-[13px] text-ember">*61*+1XXXXXXXXXX*11*20#</span><br />
-                <span className="text-[11px] text-t3 mt-1 block">Replace XXXXXXXXXX with your Respondfall number digits. Full instructions are in the Connect tab.</span>
+              <div className="bg-sky-dim border border-blue-2 rounded-lg p-3 text-[12px] text-t2 leading-relaxed border-l-[3px] border-l-primary">
+                Step-by-step forwarding instructions for iPhone, Android, and carriers are in the <strong className="text-sky">Connect tab</strong>.
               </div>
             </div>
           )}

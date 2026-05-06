@@ -1,6 +1,63 @@
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { Client } from '@/types/respondfall';
 
+interface PendingMsg {
+  id: string;
+  caller_number: string;
+  body: string;
+  send_at: string;
+  step_label: string | null;
+}
+
+function relativeTime(iso: string): string {
+  const diffMs = new Date(iso).getTime() - Date.now();
+  const past = diffMs < 0;
+  const abs = Math.abs(diffMs);
+  const mins = Math.round(abs / 60000);
+  const hours = Math.round(abs / 3600000);
+  const days = Math.round(abs / 86400000);
+  let label: string;
+  if (mins < 60) label = `${mins}m`;
+  else if (hours < 24) label = `${hours}h`;
+  else label = `${days}d`;
+  return past ? `${label} ago` : `in ${label}`;
+}
+
 export function SequencesTab({ client }: { client: Client }) {
+  const [pending, setPending] = useState<PendingMsg[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!client.id) return;
+    let active = true;
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from('scheduled_messages')
+        .select('*')
+        .eq('client_id', client.id)
+        .eq('status', 'pending')
+        .order('send_at', { ascending: true })
+        .limit(50);
+      if (active) { setPending((data ?? []) as PendingMsg[]); setLoading(false); }
+    })();
+    return () => { active = false; };
+  }, [client.id]);
+
+  const cancelPending = async (id: string) => {
+    const prev = pending;
+    setPending(p => p.filter(x => x.id !== id));
+    const { error } = await supabase.from('scheduled_messages').delete().eq('id', id);
+    if (error) {
+      setPending(prev);
+      toast.error('Could not cancel — please try again');
+      return;
+    }
+    toast.success('Follow-up cancelled');
+  };
+
   const recoverySteps = [
     {
       num: 1,
@@ -141,6 +198,51 @@ export function SequencesTab({ client }: { client: Client }) {
           </div>
         </div>
       </SequenceCard>
+
+      {/* Pending Follow-ups (real scheduled messages) */}
+      <div className="bg-s1 border border-blue rounded-xl p-5">
+        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5">
+          <span className="w-[3px] h-4 gradient-indicator rounded-sm" />
+          Pending Follow-ups
+        </div>
+        {loading ? (
+          <div className="text-[13px] text-t3">Loading…</div>
+        ) : pending.length === 0 ? (
+          <div className="text-[13px] text-t3 leading-relaxed">No follow-ups scheduled. They appear here after a missed call is received.</div>
+        ) : (
+          <div className="overflow-x-auto -mx-1">
+            <table className="w-full text-[12px]">
+              <thead>
+                <tr className="text-left text-[10px] font-mono text-t3 uppercase tracking-[.1em]">
+                  <th className="px-2 py-2">Phone Number</th>
+                  <th className="px-2 py-2">Message Preview</th>
+                  <th className="px-2 py-2">Scheduled For</th>
+                  <th className="px-2 py-2">Step</th>
+                  <th className="px-2 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map(p => (
+                  <tr key={p.id} className="border-t border-[hsl(var(--border-light))]">
+                    <td className="px-2 py-2 font-mono text-t2 whitespace-nowrap">{p.caller_number}</td>
+                    <td className="px-2 py-2 text-t2">{p.body.length > 60 ? p.body.slice(0, 60) + '…' : p.body}</td>
+                    <td className="px-2 py-2 text-t3 whitespace-nowrap">{relativeTime(p.send_at)}</td>
+                    <td className="px-2 py-2 text-t3 font-mono whitespace-nowrap">{p.step_label || '—'}</td>
+                    <td className="px-2 py-2 text-right">
+                      <button
+                        onClick={() => cancelPending(p.id)}
+                        className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-md px-2.5 py-1 text-[11px] font-mono hover:bg-[hsl(var(--destructive)/0.15)] transition-all"
+                      >
+                        Cancel
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Sequence Performance */}
       <div className="bg-s1 border border-blue rounded-xl p-5">

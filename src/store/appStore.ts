@@ -226,6 +226,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
   reviewsSent: {},
   replyTexts: {},
   vmailOpen: {},
+  activityLoading: false,
   qualFlows: [],
   referrals: [],
 

@@ -26,6 +26,38 @@ function relativeTime(iso: string): string {
 }
 
 export function SequencesTab({ client }: { client: Client }) {
+  const [pending, setPending] = useState<PendingMsg[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!client.id) return;
+    let active = true;
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from('scheduled_messages')
+        .select('*')
+        .eq('client_id', client.id)
+        .eq('status', 'pending')
+        .order('send_at', { ascending: true })
+        .limit(50);
+      if (active) { setPending((data ?? []) as PendingMsg[]); setLoading(false); }
+    })();
+    return () => { active = false; };
+  }, [client.id]);
+
+  const cancelPending = async (id: string) => {
+    const prev = pending;
+    setPending(p => p.filter(x => x.id !== id));
+    const { error } = await supabase.from('scheduled_messages').delete().eq('id', id);
+    if (error) {
+      setPending(prev);
+      toast.error('Could not cancel — please try again');
+      return;
+    }
+    toast.success('Follow-up cancelled');
+  };
+
   const recoverySteps = [
     {
       num: 1,

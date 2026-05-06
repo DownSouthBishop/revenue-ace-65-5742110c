@@ -14,7 +14,7 @@ function formatTime(iso: string) {
 }
 
 export function ActivityTab({ client }: { client: Client }) {
-  const { callLogs, smsLog, simulateCall, setConfirmDel, vmailOpen, toggleVmail } = useAppStore();
+  const { callLogs, smsLog, simulateCall, setConfirmDel, vmailOpen, toggleVmail, activityLoading } = useAppStore();
   const [testing, setTesting] = useState(false);
 
   const handleTestSetup = async () => {

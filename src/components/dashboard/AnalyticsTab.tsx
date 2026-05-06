@@ -41,14 +41,14 @@ export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Sta
           <div className="absolute top-0 left-0 right-0 h-0.5 gradient-bar" />
           <div className="text-xs font-mono text-t3 tracking-[.1em] uppercase mb-2">Estimated Revenue Protected · Last 30 Days</div>
           <div className="font-display text-[46px] font-bold text-ember tracking-[.03em] leading-none" style={{ textShadow: '0 0 24px hsl(var(--ember-glow))' }}>${rev30.toLocaleString()}</div>
-          <div className="text-xs text-t2 mt-1.5">{m30} missed calls × ${client.avg_job_value} avg · <strong className="text-success">ROI: {Math.round(rev30 / 497)}x investment</strong></div>
+          <div className="text-xs text-t2 mt-1.5">{m30} missed calls × ${client.avg_job_value} avg · <strong className="text-success">ROI: {Math.round(rev30 / PLAN_PRICE)}x investment</strong></div>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-3 mb-3.5">
         {[
-          { l: '7-Day Missed', v: String(m7), cls: 'text-sky' },
-          { l: '7-Day SMS Sent', v: String(s7), cls: '' },
+          { l: '7-Day Missed', v: String(stats7.missed), cls: 'text-sky' },
+          { l: '7-Day SMS Sent', v: String(stats7.sms), cls: '' },
           { l: '30-Day Missed', v: String(m30), cls: '' },
           { l: '30-Day SMS', v: String(s30), cls: '' },
         ].map(s => (

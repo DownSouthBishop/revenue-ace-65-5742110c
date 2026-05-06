@@ -157,7 +157,7 @@ export default function AuthPage() {
         </div>
 
         <div className="text-center mt-4 text-[11px] font-mono text-t3 tracking-[.06em]" style={{ animation: 'fadeUp 0.6s ease 0.2s both' }}>
-          Powered by <span className="text-sky">SkyforgeAI</span> · Enterprise-Grade Infrastructure
+          Missed Call Revenue Recovery · Built for Service Businesses
           <div className="mt-2 flex justify-center gap-3 text-[10px]">
             <a href="/terms" className="text-t3 hover:text-sky">Terms</a>
             <a href="/privacy" className="text-t3 hover:text-sky">Privacy</a>

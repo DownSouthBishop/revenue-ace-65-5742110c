@@ -129,6 +129,26 @@ export const SettingsTab = forwardRef<HTMLDivElement, { client: Client }>(
             <div>
               <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Initial SMS Template</label>
               <textarea className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none focus:border-primary min-h-[78px] resize-y" value={template} onChange={e => setTemplate(e.target.value)} />
+              {(() => {
+                const previewText = template
+                  .replace(/{business_name}/g, client.name)
+                  .replace(/{booking_link}/g, client.booking_link || 'https://book.example.com')
+                  .replace(/{caller_number}/g, '+1 (555) 000-0000')
+                  .replace(/{time}/g, new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
+                const len = previewText.length;
+                const counterCls = len >= 160 ? 'text-destructive' : len >= 140 ? 'text-[hsl(var(--warning))]' : 'text-t3';
+                return (
+                  <div className="mt-2.5">
+                    <div className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] mb-1.5">Customer Preview</div>
+                    <div className="bg-[hsl(var(--muted))] rounded-2xl p-3 sm:p-4">
+                      <div className="bg-white text-neutral-900 rounded-2xl rounded-bl-md px-3.5 py-2.5 text-[13px] leading-snug max-w-[320px] shadow-sm">
+                        {previewText || <span className="text-neutral-400">Your message will appear here…</span>}
+                      </div>
+                    </div>
+                    <div className={`text-[11px] font-mono mt-1.5 text-right ${counterCls}`}>{len}/160 characters</div>
+                  </div>
+                );
+              })()}
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>

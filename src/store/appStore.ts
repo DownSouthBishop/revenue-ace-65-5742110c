@@ -136,6 +136,7 @@ interface AppState {
   reviewsSent: Record<string, boolean>;
   replyTexts: Record<string, string>;
   vmailOpen: Record<string, boolean>;
+  activityLoading: boolean;
 
   // Qualification flows
   qualFlows: QualificationFlow[];

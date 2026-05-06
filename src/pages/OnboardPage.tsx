@@ -21,7 +21,7 @@ export default function OnboardPage() {
     } else if (obStep === 2) {
       if (!obForm.forward_from_number.trim()) { setErr('Your business phone number is required.'); return; }
       setSaving(true);
-      const result = await addClient({
+      const { client, error } = await addClient({
         name: obForm.name,
         business_type: obForm.business_type,
         twilio_phone_number: obForm.selectedPhoneNumber,
@@ -36,7 +36,7 @@ export default function OnboardPage() {
         is_active: true,
       });
       setSaving(false);
-      if (!result) { setErr('Failed to save client. Please try again.'); return; }
+      if (!client) { setErr(error || 'Failed to save client. Please try again.'); return; }
       setObStep(3);
     } else {
       setPage('dashboard');

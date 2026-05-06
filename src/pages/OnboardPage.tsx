@@ -141,10 +141,13 @@ export default function OnboardPage() {
               {tier === 'free' && (
                 <div className="bg-ember-dim border border-ember rounded-lg p-3 text-[12px] text-t2 mb-4 leading-relaxed border-l-[3px] border-l-accent flex items-center justify-between gap-3">
                   <div>
-                    💡 Your Respondfall number is included on all paid plans starting at <strong className="text-ember">$49/mo</strong>. Numbers are provisioned instantly.
+                    A Respondfall number routes missed calls automatically. Included on all paid plans from <strong className="text-ember">$49/mo</strong>.
                   </div>
-                  <button onClick={upgradeNow} className="gradient-sky text-primary-foreground rounded-md px-3 py-1.5 text-[11px] font-mono font-semibold tracking-[.04em] flex-shrink-0 hover:glow-sky transition-all">
-                    Upgrade Now
+                  <button
+                    onClick={() => { useAppStore.setState({ tab: 'billing' }); setPage('dashboard'); }}
+                    className="gradient-sky text-primary-foreground rounded-md px-3 py-1.5 text-[11px] font-mono font-semibold tracking-[.04em] flex-shrink-0 hover:glow-sky transition-all"
+                  >
+                    View Plans
                   </button>
                 </div>
               )}

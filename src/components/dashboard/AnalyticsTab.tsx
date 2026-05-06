@@ -5,7 +5,7 @@ import type { Client } from '@/types/respondfall';
 
 interface Stats30 { missed: number; smsSent: number; missedToday: number; smsToday: number }
 
-const PLAN_PRICE = 149; // Growth plan baseline for ROI calc
+const RECOVERY_RATE = 0.35; // Conservative est. of missed calls recovered into revenue
 
 export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Stats30 }) {
   const { optOuts } = useAppStore();
@@ -41,7 +41,7 @@ export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Sta
           <div className="absolute top-0 left-0 right-0 h-0.5 gradient-bar" />
           <div className="text-xs font-mono text-t3 tracking-[.1em] uppercase mb-2">Estimated Revenue Protected · Last 30 Days</div>
           <div className="font-display text-[46px] font-bold text-ember tracking-[.03em] leading-none" style={{ textShadow: '0 0 24px hsl(var(--ember-glow))' }}>${rev30.toLocaleString()}</div>
-          <div className="text-xs text-t2 mt-1.5">{m30} missed calls × ${client.avg_job_value} avg · <strong className="text-success">ROI: {Math.round(rev30 / PLAN_PRICE)}x investment</strong></div>
+          <div className="text-xs text-t2 mt-1.5">{m30} missed calls × ${client.avg_job_value} avg · <strong className="text-success">7-day est. recovered: ${(stats7.missed * client.avg_job_value * RECOVERY_RATE).toFixed(0)}</strong></div>
         </div>
       )}
 
@@ -68,7 +68,7 @@ export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Sta
         <div className="bg-3 border border-blue rounded-[10px] p-4 text-xs text-t2 leading-loose">
           <div className="font-display text-[15px] text-foreground mb-2">📊 Respondfall AI Weekly Report — {client.name}</div>
           <strong className="text-foreground">Last 30 days:</strong> {m30} missed calls · {s30} SMS sent · <strong className="text-ember">${rev30.toLocaleString()} protected</strong><br />
-          <span className="text-t3 text-[11px]">Respondfall AI · SkyforgeAI · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+          <span className="text-t3 text-[11px]">Respondfall AI · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
         </div>
       </div>
 

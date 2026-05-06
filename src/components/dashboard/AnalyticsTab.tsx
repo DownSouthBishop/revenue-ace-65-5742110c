@@ -1,15 +1,29 @@
+import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
+import { supabase } from '@/integrations/supabase/client';
 import type { Client } from '@/types/respondfall';
 
 interface Stats30 { missed: number; smsSent: number; missedToday: number; smsToday: number }
 
+const PLAN_PRICE = 149; // Growth plan baseline for ROI calc
+
 export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Stats30 }) {
   const { optOuts } = useAppStore();
+  const [stats7, setStats7] = useState({ missed: 0, sms: 0 });
   const m30 = stats30.missed;
   const s30 = stats30.smsSent;
   const rev30 = m30 * client.avg_job_value;
-  const s7 = 0; // 7-day stats would need separate fetch; placeholder until implemented
-  const m7 = 0;
+
+  useEffect(() => {
+    if (!client.id) return;
+    const since7 = new Date(Date.now() - 7 * 86400000).toISOString();
+    Promise.all([
+      supabase.from('missed_calls').select('id', { count: 'exact', head: true })
+        .eq('client_id', client.id).gte('called_at', since7),
+      supabase.from('messages').select('id', { count: 'exact', head: true })
+        .eq('client_id', client.id).eq('direction', 'outbound').gte('sent_at', since7),
+    ]).then(([calls, msgs]) => setStats7({ missed: calls.count ?? 0, sms: msgs.count ?? 0 }));
+  }, [client.id]);
 
   return (
     <div>
@@ -27,14 +41,14 @@ export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Sta
           <div className="absolute top-0 left-0 right-0 h-0.5 gradient-bar" />
           <div className="text-xs font-mono text-t3 tracking-[.1em] uppercase mb-2">Estimated Revenue Protected · Last 30 Days</div>
           <div className="font-display text-[46px] font-bold text-ember tracking-[.03em] leading-none" style={{ textShadow: '0 0 24px hsl(var(--ember-glow))' }}>${rev30.toLocaleString()}</div>
-          <div className="text-xs text-t2 mt-1.5">{m30} missed calls × ${client.avg_job_value} avg · <strong className="text-success">ROI: {Math.round(rev30 / 497)}x investment</strong></div>
+          <div className="text-xs text-t2 mt-1.5">{m30} missed calls × ${client.avg_job_value} avg · <strong className="text-success">ROI: {Math.round(rev30 / PLAN_PRICE)}x investment</strong></div>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-3 mb-3.5">
         {[
-          { l: '7-Day Missed', v: String(m7), cls: 'text-sky' },
-          { l: '7-Day SMS Sent', v: String(s7), cls: '' },
+          { l: '7-Day Missed', v: String(stats7.missed), cls: 'text-sky' },
+          { l: '7-Day SMS Sent', v: String(stats7.sms), cls: '' },
           { l: '30-Day Missed', v: String(m30), cls: '' },
           { l: '30-Day SMS', v: String(s30), cls: '' },
         ].map(s => (

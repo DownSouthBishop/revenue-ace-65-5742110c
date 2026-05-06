@@ -1,6 +1,7 @@
 import { forwardRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store/appStore';
+import { supabase } from '@/integrations/supabase/client';
 import type { Client } from '@/types/respondfall';
 import { PhonePicker } from '@/components/PhonePicker';
 import { SystemHealthCard, exportLeadsCSV, enablePushNotifications } from './SystemHealth';
@@ -167,10 +168,21 @@ export const SettingsTab = forwardRef<HTMLDivElement, { client: Client }>(
 
         <div className="bg-s1 border border-blue rounded-xl p-5 mb-3.5">
           <div className="font-display text-base font-bold tracking-[.05em] mb-4 text-destructive flex items-center gap-2.5"><span className="w-[3px] h-4 bg-destructive rounded-sm" />Danger Zone</div>
-          <div className="text-[13px] text-t2 mb-3.5">Permanently remove this client and all associated data. This cannot be undone.</div>
-          <button className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-2 px-4 cursor-pointer text-[13px] font-mono flex items-center gap-1.5 hover:bg-[hsl(var(--destructive)/0.15)] transition-all" onClick={() => setConfirmDel({ type: 'client', id: client.id, label: client.name })}>
-            🗑 Delete Client
-          </button>
+          <div className="text-[13px] text-t2 mb-3.5">Sign out of your account, or permanently remove this client and all associated data.</div>
+          <div className="flex flex-col gap-2.5">
+            <button
+              className="w-full py-2.5 rounded-lg border border-blue-2 bg-transparent text-t2 font-display text-sm font-bold tracking-[.06em] uppercase cursor-pointer hover:bg-s2 hover:text-foreground transition-all"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                useAppStore.setState({ clients: [], activeClientId: '', page: 'auth' });
+              }}
+            >
+              Sign Out
+            </button>
+            <button className="bg-[hsl(var(--destructive)/0.08)] text-destructive border border-destructive/20 rounded-[7px] py-2 px-4 cursor-pointer text-[13px] font-mono flex items-center gap-1.5 hover:bg-[hsl(var(--destructive)/0.15)] transition-all" onClick={() => setConfirmDel({ type: 'client', id: client.id, label: client.name })}>
+              🗑 Delete Client
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-3.5">

@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { apiVersion: '2024-06-20' });
     const portal = await stripe.billingPortal.sessions.create({
       customer: sub.stripe_customer_id,
-      return_url: returnUrl || 'https://example.com',
+      return_url: returnUrl || Deno.env.get('APP_URL') || 'https://respondfall.com',
     });
     return json({ url: portal.url });
   } catch (e) {

@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { PhonePicker } from '@/components/PhonePicker';
+import { supabase } from '@/integrations/supabase/client';
+import type { Tier } from '@/lib/tiers';
 
 const INDUSTRIES = ['plumbing', 'hvac', 'electrical', 'roofing', 'landscaping', 'cleaning', 'auto_repair', 'restaurant', 'salon', 'real_estate', 'medical', 'legal', 'other'];
 const STEPS = ['Business', 'Phone', 'SMS', 'Launch'];
@@ -9,17 +11,36 @@ export default function OnboardPage() {
   const { obStep, setObStep, obForm, setObForm, addClient, setPage } = useAppStore();
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const [tier, setTier] = useState<Tier>('free');
+
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from('subscriptions').select('tier, status').eq('user_id', session.user.id).maybeSingle();
+      if (data && ['active', 'trialing'].includes(data.status ?? '')) setTier((data.tier as Tier) ?? 'free');
+    })();
+  }, []);
+
+  const upgradeNow = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data } = await supabase.functions.invoke('stripe-checkout', {
+      body: { tier: 'starter', returnUrl: window.location.origin },
+    });
+    if (data?.url) window.open(data.url, '_blank');
+  };
 
   const handleNext = async () => {
     setErr('');
     if (obStep === 0) {
       if (!obForm.name.trim()) { setErr('Business name is required.'); return; }
+      if (!obForm.forward_from_number.trim()) { setErr('Your business phone number is required.'); return; }
       setObStep(1);
     } else if (obStep === 1) {
-      if (!obForm.selectedPhoneNumber) { setErr('Please claim a phone number to continue.'); return; }
+      // Phone number is optional — users can claim it later in Settings
       setObStep(2);
     } else if (obStep === 2) {
-      if (!obForm.forward_from_number.trim()) { setErr('Your business phone number is required.'); return; }
       setSaving(true);
       const { client, error } = await addClient({
         name: obForm.name,
@@ -102,6 +123,11 @@ export default function OnboardPage() {
                   <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Google Review Link <span className="text-t3">(for post-job review requests)</span></label>
                   <input className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none focus:border-primary" value={obForm.google_review_link} onChange={e => setObForm({ google_review_link: e.target.value })} placeholder="https://g.page/r/.../review" />
                 </div>
+                <div className="sm:col-span-2">
+                  <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Your Current Business Number * <span className="text-t3">(customers call this)</span></label>
+                  <input className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none focus:border-primary" value={obForm.forward_from_number} onChange={e => setObForm({ forward_from_number: e.target.value })} placeholder="+1 (305) 555-9999" />
+                  <div className="text-[11px] text-t3 font-mono mt-1">We'll route unanswered calls from this number to your Respondfall number.</div>
+                </div>
               </div>
             </div>
           )}
@@ -112,11 +138,21 @@ export default function OnboardPage() {
                 <div className="w-7 h-7 rounded-full gradient-sky border border-primary flex items-center justify-center text-xs font-bold text-primary-foreground glow-sky">2</div>
                 Claim Your Dedicated Phone Number
               </div>
+              {tier === 'free' && (
+                <div className="bg-ember-dim border border-ember rounded-lg p-3 text-[12px] text-t2 mb-4 leading-relaxed border-l-[3px] border-l-accent flex items-center justify-between gap-3">
+                  <div>
+                    💡 Your Respondfall number is included on all paid plans starting at <strong className="text-ember">$49/mo</strong>. Numbers are provisioned instantly.
+                  </div>
+                  <button onClick={upgradeNow} className="gradient-sky text-primary-foreground rounded-md px-3 py-1.5 text-[11px] font-mono font-semibold tracking-[.04em] flex-shrink-0 hover:glow-sky transition-all">
+                    Upgrade Now
+                  </button>
+                </div>
+              )}
               <div className="bg-sky-dim border border-blue-2 rounded-lg p-3 text-[12px] text-t2 mb-4 leading-relaxed border-l-[3px] border-l-primary">
                 <strong className="text-sky">No external accounts needed.</strong> Your number is provisioned instantly. Search by area code or city.
               </div>
               <PhonePicker onSelect={(num) => setObForm({ selectedPhoneNumber: num })} selected={obForm.selectedPhoneNumber} />
-              {obForm.selectedPhoneNumber && (
+              {obForm.selectedPhoneNumber ? (
                 <div className="flex items-center gap-2.5 p-3 bg-success-bg border border-success rounded-lg mt-2">
                   <span className="text-lg">✓</span>
                   <div>
@@ -124,12 +160,11 @@ export default function OnboardPage() {
                     <div className="text-[11px] font-mono text-t3">Provisioned · Respondfall Infrastructure</div>
                   </div>
                 </div>
+              ) : (
+                <div className="bg-3 border border-blue rounded-lg p-3 text-[12px] text-t3 mt-2 leading-relaxed">
+                  You can set up your Respondfall number now or add it later in Settings.
+                </div>
               )}
-              <div className="mt-3.5">
-                <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Your Business Phone Number <span className="text-ember">★ Required</span></label>
-                <input className="w-full bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-3 outline-none focus:border-primary" value={obForm.forward_from_number} onChange={e => setObForm({ forward_from_number: e.target.value })} placeholder="+1 (305) 555-9999" />
-                <div className="text-[11px] text-t3 font-mono mt-1">Enter the number your customers already call. Missed calls will forward to your new Respondfall number.</div>
-              </div>
             </div>
           )}
 
@@ -185,6 +220,11 @@ export default function OnboardPage() {
           <div className="flex gap-2.5 mt-6">
             {obStep > 0 && obStep < 3 && (
               <button className="flex-1 py-3 rounded-lg border border-blue-2 bg-transparent text-t2 font-display text-sm font-bold tracking-[.06em] uppercase cursor-pointer hover:bg-s2 hover:text-foreground transition-all active:scale-[0.98]" onClick={() => setObStep(obStep - 1)}>← Back</button>
+            )}
+            {obStep === 1 && !obForm.selectedPhoneNumber && (
+              <button className="flex-1 py-3 rounded-lg border border-blue-2 bg-transparent text-t3 font-display text-sm font-bold tracking-[.06em] uppercase cursor-pointer hover:bg-s2 hover:text-foreground transition-all" onClick={() => { setObForm({ selectedPhoneNumber: '' }); setObStep(2); }}>
+                Skip for now →
+              </button>
             )}
             <button className="flex-[2] py-3 rounded-lg gradient-sky text-primary-foreground border-none font-display text-sm font-bold tracking-[.06em] uppercase cursor-pointer glow-sky hover:-translate-y-px transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]" onClick={handleNext} disabled={saving}>
               {saving ? (obStep === 2 ? '◌ CLAIMING YOUR NUMBER...' : '◌ DEPLOYING...') : obStep === 3 ? '🚀 LAUNCH DASHBOARD' : 'CONTINUE →'}

@@ -11,7 +11,10 @@ import { ConnectTab } from '@/components/dashboard/ConnectTab';
 import { AddClientModal } from '@/components/dashboard/AddClientModal';
 import { ConfirmDeleteModal } from '@/components/dashboard/ConfirmDeleteModal';
 import { ReferralsTab } from '@/components/dashboard/ReferralsTab';
+import { BillingTab } from '@/components/dashboard/BillingTab';
 import { enablePushNotifications } from '@/components/dashboard/SystemHealth';
+import { tierByName, type Tier } from '@/lib/tiers';
+import { toast } from 'sonner';
 import type { TabId } from '@/types/respondfall';
 
 const TABS: { id: TabId; label: string; mobileLabel: string }[] = [
@@ -20,6 +23,7 @@ const TABS: { id: TabId; label: string; mobileLabel: string }[] = [
   { id: 'sequences', label: 'Sequences', mobileLabel: '🔄' },
   { id: 'analytics', label: 'Analytics', mobileLabel: '📊' },
   { id: 'referrals', label: 'Referrals', mobileLabel: '🤝' },
+  { id: 'billing', label: 'Billing', mobileLabel: '💳' },
   { id: 'config', label: 'Settings', mobileLabel: '⚙️' },
   { id: 'connect', label: 'Connect', mobileLabel: '📞' },
 ];
@@ -35,6 +39,28 @@ export default function DashboardPage() {
   const client = clients.find(c => c.id === activeClientId) || clients[0];
   const [stats30, setStats30] = useState({ missed: 0, smsSent: 0, missedToday: 0, smsToday: 0 });
   const [showNotifBanner, setShowNotifBanner] = useState(false);
+  const [tier, setTier] = useState<Tier>('free');
+
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from('subscriptions').select('tier, status').eq('user_id', session.user.id).maybeSingle();
+      if (data && ['active', 'trialing'].includes(data.status ?? '')) setTier((data.tier as Tier) ?? 'free');
+    })();
+  }, []);
+
+  const handleAddClient = () => {
+    const limit = tierByName(tier).clients;
+    if (clients.length >= limit) {
+      toast.error(`You've reached your plan's client limit (${limit}). Upgrade in the Billing tab.`);
+      setTab('billing');
+      setMobileMenuOpen(false);
+      return;
+    }
+    setShowAddModal(true);
+    setMobileMenuOpen(false);
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
@@ -132,7 +158,7 @@ export default function DashboardPage() {
                   <div className="w-1.5 h-1.5 rounded-full bg-success flex-shrink-0 animate-pulse-dot" />
                 </div>
               ))}
-              <div className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg cursor-pointer border border-dashed border-blue text-t3 text-xs my-1 hover:border-primary hover:text-sky hover:bg-sky-dim transition-all" onClick={() => { setShowAddModal(true); setMobileMenuOpen(false); }}>
+              <div className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg cursor-pointer border border-dashed border-blue text-t3 text-xs my-1 hover:border-primary hover:text-sky hover:bg-sky-dim transition-all" onClick={handleAddClient}>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0">+</div>
                 <span>Add Client</span>
               </div>
@@ -191,7 +217,7 @@ export default function DashboardPage() {
           ))}
           <div
             className="flex items-center gap-2.5 py-2 px-2.5 rounded-lg cursor-pointer border border-dashed border-blue text-t3 text-xs my-1 hover:border-primary hover:text-sky hover:bg-sky-dim transition-all"
-            onClick={() => setShowAddModal(true)}
+            onClick={handleAddClient}
           >
             <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-lg flex-shrink-0">+</div>
             {sidebarOpen && <span>Add Client</span>}
@@ -294,6 +320,7 @@ export default function DashboardPage() {
           {tab === 'sequences' && <SequencesTab client={client} />}
           {tab === 'analytics' && <AnalyticsTab client={client} stats30={stats30} />}
           {tab === 'referrals' && <ReferralsTab client={client} />}
+          {tab === 'billing' && <BillingTab />}
           {tab === 'config' && <SettingsTab client={client} />}
           {tab === 'connect' && <ConnectTab client={client} />}
         </div>

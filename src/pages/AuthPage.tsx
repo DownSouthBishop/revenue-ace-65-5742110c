@@ -50,7 +50,17 @@ export default function AuthPage() {
         setMsg(`Magic link sent to ${email}. Check your inbox.`);
       }
     } catch (e: any) {
-      setErr(e?.message || 'Authentication failed. Please try again.');
+      const code = e?.code || e?.error_code || '';
+      const raw = (e?.message || '').toLowerCase();
+      let friendly = e?.message || 'Authentication failed. Please try again.';
+      if (code === 'invalid_credentials' || raw.includes('invalid login credentials')) {
+        friendly = 'Email or password is incorrect.';
+      } else if (code === 'email_not_confirmed' || raw.includes('email not confirmed')) {
+        friendly = 'Please check your email and confirm your account first.';
+      } else if (code === 'over_email_send_rate_limit' || raw.includes('rate limit') || raw.includes('too many')) {
+        friendly = 'Too many attempts — please wait a few minutes.';
+      }
+      setErr(friendly);
     } finally {
       setLoading(false);
     }

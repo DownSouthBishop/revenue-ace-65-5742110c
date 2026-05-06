@@ -280,7 +280,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
           const log = msgRowToLog(payload.new as MessageRowWithStatus);
           set((s) => {
             if (s.smsLog.find(m => m.id === log.id)) return {};
-            const next: any = { smsLog: [...s.smsLog, log] };
+            const next: Partial<AppState> = { smsLog: [...s.smsLog, log] };
             if (log.direction === 'inbound' && isStopKeyword(log.body) && !s.optOuts.includes(log.from_number)) {
               next.optOuts = [...s.optOuts, log.from_number];
             }

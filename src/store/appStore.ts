@@ -80,18 +80,6 @@ const msgRowToLog = (r: MessageRowWithStatus): SmsLog => ({
 
 let activityChannel: ReturnType<typeof supabase.channel> | null = null;
 
-const DEMO_NUMBERS: PhoneNumber[] = [
-  { number: '+1 (305) 555-0100', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (305) 555-0147', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (786) 555-0203', locality: 'Miami', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (954) 555-0281', locality: 'Fort Lauderdale', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (561) 555-0334', locality: 'Boca Raton', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (407) 555-0412', locality: 'Orlando', region: 'FL', price: '$1.15/mo' },
-  { number: '+1 (213) 555-0501', locality: 'Los Angeles', region: 'CA', price: '$1.15/mo' },
-  { number: '+1 (312) 555-0617', locality: 'Chicago', region: 'IL', price: '$1.15/mo' },
-  { number: '+1 (212) 555-0789', locality: 'New York', region: 'NY', price: '$1.15/mo' },
-  { number: '+1 (713) 555-0832', locality: 'Houston', region: 'TX', price: '$1.15/mo' },
-];
 
 interface AppState {
   page: PageId;

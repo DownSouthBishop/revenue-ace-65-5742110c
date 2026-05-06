@@ -1,18 +1,24 @@
 import { forwardRef, useState } from 'react';
-import { useAppStore } from '@/store/appStore';
+import { supabase } from '@/integrations/supabase/client';
+
+type AvailableNumber = { number: string; friendly?: string; locality: string; region: string };
 
 export const PhonePicker = forwardRef<HTMLDivElement, { onSelect: (num: string) => void; selected?: string }>(
   function PhonePicker({ onSelect, selected }, ref) {
-    const { phoneResults, phoneSearching, searchPhoneNumbers } = useAppStore();
+    const [results, setResults] = useState<AvailableNumber[]>([]);
+    const [searching, setSearching] = useState(false);
     const [query, setQuery] = useState('');
-    const [provisioning, setProvisioning] = useState<string | null>(null);
+    const [error, setError] = useState('');
 
-    const handleClaim = (num: string) => {
-      setProvisioning(num);
-      setTimeout(() => {
-        onSelect(num);
-        setProvisioning(null);
-      }, 1200);
+    const search = async () => {
+      setSearching(true); setError('');
+      const isAreaCode = /^\d{3}$/.test(query.trim());
+      const { data, error } = await supabase.functions.invoke('twilio-search-numbers', {
+        body: isAreaCode ? { areaCode: query.trim() } : { contains: query.trim() || undefined },
+      });
+      setSearching(false);
+      if (error) { setError(error.message || 'Search failed'); return; }
+      setResults(data?.numbers || []);
     };
 
     return (
@@ -21,22 +27,23 @@ export const PhonePicker = forwardRef<HTMLDivElement, { onSelect: (num: string) 
         <div className="flex gap-2 mb-3">
           <input
             className="flex-1 bg-3 border border-blue rounded-lg text-foreground font-body text-[13px] px-3 py-2.5 outline-none focus:border-primary focus:shadow-[0_0_0_3px_hsl(var(--sky-dim))]"
-            placeholder="Area code or city (e.g. 305, Miami...)"
+            placeholder="3-digit area code (e.g. 305) or city"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && searchPhoneNumbers(query)}
+            onKeyDown={e => e.key === 'Enter' && search()}
           />
           <button
             className="gradient-sky text-primary-foreground border-none rounded-lg px-4 font-display text-xs font-bold tracking-[.06em] uppercase cursor-pointer glow-sky hover:-translate-y-px transition-all disabled:opacity-50 active:scale-[0.98]"
-            onClick={() => searchPhoneNumbers(query)}
-            disabled={phoneSearching}
+            onClick={search}
+            disabled={searching}
           >
-            {phoneSearching ? '◌' : '🔍 SEARCH'}
+            {searching ? '◌' : '🔍 SEARCH'}
           </button>
         </div>
-        {phoneResults.length > 0 && (
-          <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto">
-            {phoneResults.map(r => (
+        {error && <div className="text-[11px] text-destructive font-mono mb-2">{error}</div>}
+        {results.length > 0 && (
+          <div className="flex flex-col gap-1.5 max-h-[240px] overflow-y-auto">
+            {results.map(r => (
               <div
                 key={r.number}
                 className={`flex items-center justify-between p-2.5 px-3.5 border rounded-lg cursor-pointer transition-all ${
@@ -44,29 +51,23 @@ export const PhonePicker = forwardRef<HTMLDivElement, { onSelect: (num: string) 
                     ? 'border-primary bg-sky-dim glow-sky'
                     : 'border-blue bg-s1 hover:border-primary hover:bg-sky-dim'
                 }`}
-                onClick={() => handleClaim(r.number)}
+                onClick={() => onSelect(r.number)}
               >
                 <div>
                   <div className="font-mono text-[13px] font-medium text-foreground">{r.number}</div>
-                  <div className="text-[11px] text-t3">{r.locality}, {r.region}</div>
+                  <div className="text-[11px] text-t3">{r.locality || '—'}{r.region ? `, ${r.region}` : ''}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-success">{r.price}</span>
-                  {selected === r.number ? (
-                    <span className="text-[10px] font-mono bg-success-bg text-success border border-success rounded px-2 py-0.5">SELECTED</span>
-                  ) : (
-                    <button
-                      className="gradient-sky text-primary-foreground border-none rounded-lg px-3 py-1 text-[11px] font-display font-bold cursor-pointer transition-all active:scale-[0.95]"
-                      onClick={(e) => { e.stopPropagation(); handleClaim(r.number); }}
-                      disabled={provisioning === r.number}
-                    >
-                      {provisioning === r.number ? '◌' : 'CLAIM'}
-                    </button>
-                  )}
-                </div>
+                {selected === r.number ? (
+                  <span className="text-[10px] font-mono bg-success-bg text-success border border-success rounded px-2 py-0.5">SELECTED</span>
+                ) : (
+                  <span className="text-[10px] font-mono text-t3">tap to select</span>
+                )}
               </div>
             ))}
           </div>
+        )}
+        {!searching && results.length === 0 && (
+          <div className="text-[11px] font-mono text-t3">Enter an area code or city, then press Search.</div>
         )}
       </div>
     );

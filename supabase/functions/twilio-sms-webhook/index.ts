@@ -76,6 +76,16 @@ Deno.serve(async (req) => {
       return TWIML('<Response><Message>You are re-subscribed. Reply STOP to opt out.</Message></Response>');
     }
 
+    // Cancel any pending follow-ups for this caller (they replied)
+    await sb.from('scheduled_messages').update({ status: 'cancelled' })
+      .eq('client_id', clientId).eq('caller_number', from).eq('status', 'pending');
+
+    // Daily cap guard
+    const since = new Date(); since.setHours(0, 0, 0, 0);
+    const { count: dayCount } = await sb.from('messages').select('id', { count: 'exact', head: true })
+      .eq('client_id', clientId).eq('direction', 'outbound').gte('sent_at', since.toISOString());
+    if ((dayCount ?? 0) >= (client.daily_sms_cap ?? 200)) return TWIML();
+
     // Generate AI reply
     const { data: hist } = await sb.from('messages').select('direction, body')
       .eq('client_id', clientId).eq('caller_number', from)

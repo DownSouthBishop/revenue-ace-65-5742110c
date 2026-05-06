@@ -8,12 +8,17 @@ verify_jwt = false
 
 [functions.sequence-runner]
 verify_jwt = false
+schedule = "*/5 * * * *"
+
+[functions.send-manual-sms]
+verify_jwt = true
 
 [functions.twilio-sms-status]
 verify_jwt = false
 
 [functions.send-daily-digest]
 verify_jwt = false
+schedule = "0 8 * * *"
 
 [functions.send-onboard-email]
 verify_jwt = false

@@ -42,7 +42,8 @@ async function aiReply(client: any, from: string, transcript: string | null) {
   try {
     const sys = `Write ONE SMS for "${client.business_name}" (${client.industry}) to a missed caller. Warm, professional, urgent. Under 160 chars. End with "Reply STOP to opt out."`;
     const user = `Caller: ${from}. Voicemail: ${transcript || '(none)'}. Booking: ${client.booking_link || 'n/a'}.`;
-    const r = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiUrl = Deno.env.get('AI_GATEWAY_URL') ?? 'https://ai.gateway.lovable.dev/v1/chat/completions';
+    const r = await fetch(aiUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages: [{ role: 'system', content: sys }, { role: 'user', content: user }] }),
@@ -128,6 +129,9 @@ async function processMissed(sb: any, client: any, from: string, callSid: string
 
   let body = await aiReply(client, from, transcript);
   if (!body) {
+    console.warn('aiReply returned null for client', client.id, '— using template fallback');
+  }
+  if (!body) {
     body = tplVars(client.sms_template || 'Hey, sorry we missed you! Reply STOP.', {
       business_name: client.business_name ?? '', caller_number: from,
       time: new Date().toLocaleTimeString(), booking_link: client.booking_link ?? '',
@@ -145,13 +149,15 @@ async function processMissed(sb: any, client: any, from: string, callSid: string
       client_id: client.id, last_successful_send: new Date().toISOString(),
       consecutive_failures: 0, last_error: null,
     }, { onConflict: 'client_id' });
-    // Increment monthly usage counter
+    // Increment monthly usage counter (atomic via RPC)
     if (client.owner_id && tierPeriodStart) {
-      const periodEnd = new Date(tierPeriodStart); periodEnd.setUTCMonth(periodEnd.getUTCMonth() + 1);
-      const { data: existing } = await sb.from('usage_counters').select('id, count')
-        .eq('user_id', client.owner_id).eq('metric', 'sms_sent').eq('period_start', tierPeriodStart).maybeSingle();
-      if (existing) await sb.from('usage_counters').update({ count: existing.count + 1, updated_at: new Date().toISOString() }).eq('id', existing.id);
-      else await sb.from('usage_counters').insert({ user_id: client.owner_id, client_id: client.id, metric: 'sms_sent', period_start: tierPeriodStart, period_end: periodEnd.toISOString(), count: 1 });
+      await sb.rpc('increment_usage_counter', {
+        p_user_id: client.owner_id,
+        p_client_id: client.id,
+        p_metric: 'sms_sent',
+        p_period_start: tierPeriodStart,
+        p_period_end: new Date(new Date(tierPeriodStart).setUTCMonth(new Date(tierPeriodStart).getUTCMonth() + 1)).toISOString(),
+      });
     }
     // Schedule step-2 follow-up in 4 hours
     const sendAt = new Date(Date.now() + 4 * 3600 * 1000).toISOString();

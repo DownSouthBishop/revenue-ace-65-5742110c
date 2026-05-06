@@ -1,4 +1,29 @@
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { Client } from '@/types/respondfall';
+
+interface PendingMsg {
+  id: string;
+  caller_number: string;
+  body: string;
+  send_at: string;
+  step_label: string | null;
+}
+
+function relativeTime(iso: string): string {
+  const diffMs = new Date(iso).getTime() - Date.now();
+  const past = diffMs < 0;
+  const abs = Math.abs(diffMs);
+  const mins = Math.round(abs / 60000);
+  const hours = Math.round(abs / 3600000);
+  const days = Math.round(abs / 86400000);
+  let label: string;
+  if (mins < 60) label = `${mins}m`;
+  else if (hours < 24) label = `${hours}h`;
+  else label = `${days}d`;
+  return past ? `${label} ago` : `in ${label}`;
+}
 
 export function SequencesTab({ client }: { client: Client }) {
   const recoverySteps = [

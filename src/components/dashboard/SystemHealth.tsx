@@ -44,7 +44,7 @@ export async function exportLeadsCSV(clientId: string, businessName: string) {
     supabase.from('messages').select('*').eq('client_id', clientId).order('sent_at', { ascending: true }),
   ]);
   const rows = [['type', 'caller', 'direction', 'body_or_transcript', 'timestamp']];
-  (calls.data ?? []).forEach((c: any) => rows.push(['missed_call', c.caller_number, '', (c.transcript || '').replace(/\n/g, ' '), c.called_at]));
+  (calls.data ?? []).forEach((c: any) => rows.push(['missed_call', c.caller_number, '', (c.voicemail_transcript || c.transcript || '').replace(/\n/g, ' '), c.called_at]));
   (msgs.data ?? []).forEach((m: any) => rows.push(['sms', m.caller_number, m.direction, (m.body || '').replace(/\n/g, ' '), m.sent_at]));
   const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });

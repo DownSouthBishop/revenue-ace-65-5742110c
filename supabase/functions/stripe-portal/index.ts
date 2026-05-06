@@ -1,5 +1,6 @@
-// Release a Twilio phone number (called when client is deleted).
+// Stripe Billing Portal — let users manage subscription. Authenticated.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -13,30 +14,25 @@ Deno.serve(async (req) => {
   try {
     const auth = req.headers.get('Authorization') || '';
     if (!auth.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
-    const userSb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } } });
+    const userSb = createClient(
+      Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: auth } } }
+    );
     const { data: claims } = await userSb.auth.getClaims(auth.replace('Bearer ', ''));
     if (!claims?.claims) return json({ error: 'Unauthorized' }, 401);
     const userId = claims.claims.sub as string;
 
-    const { numberSid } = await req.json();
-    if (!numberSid) return json({ ok: true, skipped: true });
-
-    const sid = Deno.env.get('TWILIO_ACCOUNT_SID')!;
-    const tok = Deno.env.get('TWILIO_AUTH_TOKEN')!;
-    const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/IncomingPhoneNumbers/${numberSid}.json`, {
-      method: 'DELETE',
-      headers: { Authorization: `Basic ${btoa(`${sid}:${tok}`)}` },
-    });
-    if (!r.ok && r.status !== 404) {
-      const body = await r.text();
-      return json({ error: body }, r.status);
-    }
+    const { returnUrl } = await req.json().catch(() => ({}));
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-    await admin.from('audit_log').insert({
-      user_id: userId, action: 'twilio.number.released',
-      resource_type: 'phone_number', resource_id: numberSid,
+    const { data: sub } = await admin.from('subscriptions').select('stripe_customer_id').eq('user_id', userId).maybeSingle();
+    if (!sub?.stripe_customer_id) return json({ error: 'No subscription' }, 404);
+
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { apiVersion: '2024-06-20' });
+    const portal = await stripe.billingPortal.sessions.create({
+      customer: sub.stripe_customer_id,
+      return_url: returnUrl || 'https://example.com',
     });
-    return json({ ok: true });
+    return json({ url: portal.url });
   } catch (e) {
     return json({ error: String(e) }, 500);
   }

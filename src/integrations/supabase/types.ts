@@ -153,6 +153,7 @@ export type Database = {
           direction: string
           id: string
           sent_at: string | null
+          status: string
           step_label: string | null
           twilio_sid: string | null
         }
@@ -164,6 +165,7 @@ export type Database = {
           direction: string
           id?: string
           sent_at?: string | null
+          status?: string
           step_label?: string | null
           twilio_sid?: string | null
         }
@@ -175,6 +177,7 @@ export type Database = {
           direction?: string
           id?: string
           sent_at?: string | null
+          status?: string
           step_label?: string | null
           twilio_sid?: string | null
         }

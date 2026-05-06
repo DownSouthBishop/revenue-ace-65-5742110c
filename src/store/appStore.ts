@@ -63,7 +63,7 @@ const msgRowToLog = (r: any): SmsLog => ({
   to_number: r.direction === 'outbound' ? r.caller_number : '',
   from_number: r.direction === 'inbound' ? r.caller_number : '',
   body: r.body,
-  status: r.direction === 'inbound' ? 'received' : 'sent',
+  status: r.direction === 'inbound' ? 'received' : (r.status || 'sent'),
   sent_at: r.sent_at,
   step: r.step_label ?? undefined,
 });
@@ -277,6 +277,13 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
               }
             } catch {}
           }
+        })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` },
+        (payload) => {
+          const updated = msgRowToLog(payload.new);
+          set((s) => ({
+            smsLog: s.smsLog.map(m => m.id === updated.id ? { ...m, status: updated.status } : m),
+          }));
         })
       .subscribe();
   },

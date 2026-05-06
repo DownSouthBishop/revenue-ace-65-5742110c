@@ -25,11 +25,12 @@ export default function DashboardPage() {
   const {
     clients, activeClientId, setActiveClientId, tab, setTab,
     sidebarOpen, toggleSidebar, setShowAddModal, showAddModal, confirmDel,
-    setPage, smsLog, mobileMenuOpen, setMobileMenuOpen, dailyStats,
+    smsLog, mobileMenuOpen, setMobileMenuOpen,
     loadActivityForClient, subscribeActivity, unsubscribeActivity,
   } = useAppStore();
 
   const client = clients.find(c => c.id === activeClientId) || clients[0];
+  const [stats30, setStats30] = useState({ missed: 0, smsSent: 0, missedToday: 0, smsToday: 0 });
 
   useEffect(() => {
     if (!activeClientId) return;
@@ -37,6 +38,20 @@ export default function DashboardPage() {
     subscribeActivity(activeClientId);
     return () => unsubscribeActivity();
   }, [activeClientId, loadActivityForClient, subscribeActivity, unsubscribeActivity]);
+
+  useEffect(() => {
+    if (!activeClientId) return;
+    const since30 = new Date(Date.now() - 30 * 86400000).toISOString();
+    const sinceToday = new Date(); sinceToday.setHours(0, 0, 0, 0);
+    Promise.all([
+      supabase.from('missed_calls').select('id', { count: 'exact', head: true }).eq('client_id', activeClientId).gte('called_at', since30),
+      supabase.from('messages').select('id', { count: 'exact', head: true }).eq('client_id', activeClientId).eq('direction', 'outbound').gte('sent_at', since30),
+      supabase.from('missed_calls').select('id', { count: 'exact', head: true }).eq('client_id', activeClientId).gte('called_at', sinceToday.toISOString()),
+      supabase.from('messages').select('id', { count: 'exact', head: true }).eq('client_id', activeClientId).eq('direction', 'outbound').gte('sent_at', sinceToday.toISOString()),
+    ]).then(([a, b, c, d]) => setStats30({
+      missed: a.count ?? 0, smsSent: b.count ?? 0, missedToday: c.count ?? 0, smsToday: d.count ?? 0,
+    }));
+  }, [activeClientId, smsLog.length]);
 
   if (!client) return null;
 

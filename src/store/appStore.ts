@@ -262,7 +262,14 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` },
         (payload) => {
           const log = msgRowToLog(payload.new);
-          set((s) => s.smsLog.find(m => m.id === log.id) ? {} : { smsLog: [...s.smsLog, log] });
+          set((s) => {
+            if (s.smsLog.find(m => m.id === log.id)) return {};
+            const next: any = { smsLog: [...s.smsLog, log] };
+            if (log.direction === 'inbound' && isStopKeyword(log.body) && !s.optOuts.includes(log.from_number)) {
+              next.optOuts = [...s.optOuts, log.from_number];
+            }
+            return next;
+          });
           if (log.direction === 'inbound') {
             try {
               if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {

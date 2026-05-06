@@ -141,7 +141,7 @@ interface AppState {
   configSaved: boolean;
 
   // Actions
-  addClient: (c: Omit<Client, 'id'>) => Promise<Client | null>;
+  addClient: (c: Omit<Client, 'id'>) => Promise<{ client: Client | null; error?: string }>;
   deleteClient: (id: string) => Promise<void>;
   updateClient: (id: string, data: Partial<Client>) => Promise<void>;
   loadClients: () => Promise<void>;

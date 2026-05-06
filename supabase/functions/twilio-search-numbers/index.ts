@@ -13,9 +13,10 @@ Deno.serve(async (req) => {
   try {
     const auth = req.headers.get('Authorization') || '';
     if (!auth.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+    // Use getUser() — getClaims() does not exist in Supabase JS v2
     const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } } });
-    const { data: claims } = await sb.auth.getClaims(auth.replace('Bearer ', ''));
-    if (!claims?.claims) return json({ error: 'Unauthorized' }, 401);
+    const { data: { user }, error: authErr } = await sb.auth.getUser();
+    if (authErr || !user) return json({ error: 'Unauthorized' }, 401);
 
     const { areaCode, contains, country = 'US' } = await req.json().catch(() => ({}));
     const sid = Deno.env.get('TWILIO_ACCOUNT_SID')!;

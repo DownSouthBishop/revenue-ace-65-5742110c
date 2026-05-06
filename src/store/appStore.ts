@@ -260,7 +260,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       .channel(`activity-${clientId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'missed_calls', filter: `client_id=eq.${clientId}` },
         (payload) => {
-          const log = callRowToLog(payload.new);
+          const log = callRowToLog(payload.new as MissedCallWithVm);
           set((s) => s.callLogs.find(c => c.id === log.id) ? {} : { callLogs: [log, ...s.callLogs] });
           // Browser notification on new missed call
           try {

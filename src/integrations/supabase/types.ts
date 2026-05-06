@@ -23,14 +23,18 @@ export type Database = {
           business_name: string
           business_number: string | null
           created_at: string | null
+          daily_sms_cap: number
+          forward_timeout_seconds: number
           google_review_link: string | null
           id: string
           industry: string | null
           owner_id: string
           respondfall_number: string | null
           send_delay_seconds: number | null
+          sms_consent_text: string | null
           sms_template: string | null
           system_active: boolean | null
+          terms_accepted_at: string | null
           timezone: string
           twilio_number_sid: string | null
           twilio_sid: string | null
@@ -43,14 +47,18 @@ export type Database = {
           business_name: string
           business_number?: string | null
           created_at?: string | null
+          daily_sms_cap?: number
+          forward_timeout_seconds?: number
           google_review_link?: string | null
           id?: string
           industry?: string | null
           owner_id: string
           respondfall_number?: string | null
           send_delay_seconds?: number | null
+          sms_consent_text?: string | null
           sms_template?: string | null
           system_active?: boolean | null
+          terms_accepted_at?: string | null
           timezone?: string
           twilio_number_sid?: string | null
           twilio_sid?: string | null
@@ -63,14 +71,18 @@ export type Database = {
           business_name?: string
           business_number?: string | null
           created_at?: string | null
+          daily_sms_cap?: number
+          forward_timeout_seconds?: number
           google_review_link?: string | null
           id?: string
           industry?: string | null
           owner_id?: string
           respondfall_number?: string | null
           send_delay_seconds?: number | null
+          sms_consent_text?: string | null
           sms_template?: string | null
           system_active?: boolean | null
+          terms_accepted_at?: string | null
           timezone?: string
           twilio_number_sid?: string | null
           twilio_sid?: string | null
@@ -259,6 +271,33 @@ export type Database = {
           email?: string | null
           id?: string
           role?: string | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
         }
         Relationships: []
       }

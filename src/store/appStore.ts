@@ -63,7 +63,7 @@ const msgRowToLog = (r: any): SmsLog => ({
   to_number: r.direction === 'outbound' ? r.caller_number : '',
   from_number: r.direction === 'inbound' ? r.caller_number : '',
   body: r.body,
-  status: r.direction === 'inbound' ? 'received' : 'sent',
+  status: r.direction === 'inbound' ? 'received' : (r.status || 'sent'),
   sent_at: r.sent_at,
   step: r.step_label ?? undefined,
 });

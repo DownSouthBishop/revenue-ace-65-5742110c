@@ -169,9 +169,6 @@ interface AppState {
   phoneSearching: boolean;
   searchPhoneNumbers: (query: string) => void;
 
-  // Cached stats (avoid random on re-render)
-  dailyStats: { missed: number; smsSent: number };
-  refreshDailyStats: () => void;
 }
 
 export const useAppStore = create<AppState>()(persist((set, get) => ({
@@ -223,9 +220,6 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
   confirmDel: null,
   setConfirmDel: (v) => set({ confirmDel: v }),
   configSaved: false,
-
-  dailyStats: { missed: 4, smsSent: 9 },
-  refreshDailyStats: () => set({ dailyStats: { missed: Math.floor(Math.random() * 5) + 2, smsSent: Math.floor(Math.random() * 8) + 5 } }),
 
   loadActivityForClient: async (clientId: string) => {
     if (!clientId) { set({ callLogs: [], smsLog: [] }); return; }
@@ -385,7 +379,6 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
 
     set((s) => ({
       callLogs: [newCall, ...s.callLogs],
-      dailyStats: { ...s.dailyStats, missed: s.dailyStats.missed + 1 },
     }));
 
     // Step 1: Initial auto-response
@@ -408,7 +401,6 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       };
       set((s) => ({
         smsLog: [sms, ...s.smsLog],
-        dailyStats: { ...s.dailyStats, smsSent: s.dailyStats.smsSent + 1 },
       }));
 
       // Step 2: Qualification prompt after auto-response

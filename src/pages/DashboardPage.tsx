@@ -257,7 +257,7 @@ export default function DashboardPage() {
           {tab === 'activity' && <ActivityTab client={client} />}
           {tab === 'inbox' && <InboxTab client={client} />}
           {tab === 'sequences' && <SequencesTab client={client} />}
-          {tab === 'analytics' && <AnalyticsTab client={client} />}
+          {tab === 'analytics' && <AnalyticsTab client={client} stats30={stats30} />}
           {tab === 'config' && <SettingsTab client={client} />}
           {tab === 'connect' && <ConnectTab client={client} />}
         </div>

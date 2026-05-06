@@ -271,7 +271,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
         })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` },
         (payload) => {
-          const log = msgRowToLog(payload.new);
+          const log = msgRowToLog(payload.new as MessageRowWithStatus);
           set((s) => {
             if (s.smsLog.find(m => m.id === log.id)) return {};
             const next: any = { smsLog: [...s.smsLog, log] };

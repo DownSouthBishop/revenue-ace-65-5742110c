@@ -5,7 +5,7 @@ import type { Client } from '@/types/respondfall';
 
 interface Stats30 { missed: number; smsSent: number; missedToday: number; smsToday: number }
 
-const PLAN_PRICE = 149; // Growth plan baseline for ROI calc
+const RECOVERY_RATE = 0.35; // Conservative est. of missed calls recovered into revenue
 
 export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Stats30 }) {
   const { optOuts } = useAppStore();

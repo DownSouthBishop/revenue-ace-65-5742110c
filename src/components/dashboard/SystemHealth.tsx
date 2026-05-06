@@ -66,7 +66,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 export async function enablePushNotifications() {
   if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-    alert('Push notifications are not supported in this browser.');
+    toast.error('Push notifications are not supported in this browser.');
     return false;
   }
   const perm = await Notification.requestPermission();

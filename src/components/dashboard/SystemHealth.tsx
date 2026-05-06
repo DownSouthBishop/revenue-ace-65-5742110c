@@ -76,7 +76,7 @@ export async function enablePushNotifications() {
       if (!existing) {
         await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidKey),
+          applicationServerKey: urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer,
         });
       }
     } catch (err) {

@@ -206,16 +206,64 @@ export const useAppStore = create<AppState>()((set, get) => ({
   dailyStats: { missed: 4, smsSent: 9 },
   refreshDailyStats: () => set({ dailyStats: { missed: Math.floor(Math.random() * 5) + 2, smsSent: Math.floor(Math.random() * 8) + 5 } }),
 
-  addClient: (c) => set((s) => ({ clients: [...s.clients, c], activeClientId: c.id, showAddModal: false, tab: 'activity' })),
-  deleteClient: (id) => set((s) => {
-    const remaining = s.clients.filter(c => c.id !== id);
-    if (remaining.length === 0) return { clients: [], page: 'onboard' as PageId, obStep: 0 };
-    return { clients: remaining, activeClientId: remaining[0].id };
-  }),
-  updateClient: (id, data) => set((s) => ({
-    clients: s.clients.map(c => c.id === id ? { ...c, ...data } : c),
-    configSaved: true,
-  })),
+  loadClients: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { set({ clients: [], activeClientId: '' }); return; }
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('owner_id', session.user.id)
+      .order('created_at', { ascending: true });
+    if (error) { console.error('loadClients', error); return; }
+    const clients = (data ?? []).map(rowToClient);
+    set((s) => ({
+      clients,
+      activeClientId: clients.find(c => c.id === s.activeClientId)?.id || clients[0]?.id || '',
+    }));
+  },
+
+  addClient: async (c) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const row = { ...clientToRow(c), owner_id: session.user.id };
+    const { data, error } = await supabase
+      .from('clients')
+      .insert(row)
+      .select()
+      .single();
+    if (error) { console.error('addClient', error); return null; }
+    const newClient = rowToClient(data);
+    set((s) => ({
+      clients: [...s.clients, newClient],
+      activeClientId: newClient.id,
+      showAddModal: false,
+      tab: 'activity',
+    }));
+    return newClient;
+  },
+
+  deleteClient: async (id) => {
+    const { error } = await supabase.from('clients').delete().eq('id', id);
+    if (error) { console.error('deleteClient', error); return; }
+    set((s) => {
+      const remaining = s.clients.filter(c => c.id !== id);
+      if (remaining.length === 0) return { clients: [], page: 'onboard' as PageId, obStep: 0, activeClientId: '' };
+      return { clients: remaining, activeClientId: remaining[0].id };
+    });
+  },
+
+  updateClient: async (id, data) => {
+    const { error } = await supabase
+      .from('clients')
+      .update(clientToRow(data))
+      .eq('id', id);
+    if (error) { console.error('updateClient', error); return; }
+    set((s) => ({
+      clients: s.clients.map(c => c.id === id ? { ...c, ...data } : c),
+      configSaved: true,
+    }));
+  },
+
   getActiveClient: () => {
     const s = get();
     return s.clients.find(c => c.id === s.activeClientId) || s.clients[0];

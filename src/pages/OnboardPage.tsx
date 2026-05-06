@@ -10,7 +10,7 @@ export default function OnboardPage() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setErr('');
     if (obStep === 0) {
       if (!obForm.name.trim()) { setErr('Business name is required.'); return; }

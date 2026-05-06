@@ -15,6 +15,26 @@ function formatTime(iso: string) {
 
 export function ActivityTab({ client }: { client: Client }) {
   const { callLogs, smsLog, simulateCall, setConfirmDel, vmailOpen, toggleVmail } = useAppStore();
+  const [testing, setTesting] = useState(false);
+
+  const handleTestSetup = async () => {
+    if (testing) return;
+    setTesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-twilio-connection');
+      if (error || !data?.ok) {
+        const msg = data?.error || error?.message || 'Unknown error';
+        toast.error(`Twilio connection failed: ${msg}. Check your credentials in Settings → Connect.`);
+        return;
+      }
+      toast.success('✅ Twilio connected — running test sequence...');
+      await simulateCall();
+    } catch (e: any) {
+      toast.error(`Twilio connection failed: ${e?.message || 'network error'}. Check your credentials in Settings → Connect.`);
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const merged = [
     ...callLogs.map(c => ({ ...c, _t: 'call' as const, _ts: c.received_at })),

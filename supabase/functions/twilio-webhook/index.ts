@@ -180,12 +180,11 @@ Deno.serve(async (req) => {
       const raw = await req.text();
       params = Object.fromEntries(new URLSearchParams(raw));
     }
-    const hasSig = req.headers.get('X-Twilio-Signature');
-    if (hasSig) {
-      if (!(await validateTwilioSignature(req, params))) {
-        console.warn('Invalid Twilio sig for', clientId);
-        return new Response('Forbidden', { status: 403, headers: cors });
-      }
+    const twilioSig = req.headers.get('X-Twilio-Signature');
+    if (!twilioSig) return new Response('Forbidden', { status: 403, headers: cors });
+    if (!(await validateTwilioSignature(req, params))) {
+      console.warn('Invalid Twilio sig for', clientId);
+      return new Response('Forbidden', { status: 403, headers: cors });
     }
     const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { data: client } = await sb.from('clients').select('*').eq('id', clientId).maybeSingle();

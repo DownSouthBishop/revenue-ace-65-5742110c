@@ -250,11 +250,24 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
         (payload) => {
           const log = callRowToLog(payload.new);
           set((s) => s.callLogs.find(c => c.id === log.id) ? {} : { callLogs: [log, ...s.callLogs] });
+          // Browser notification on new missed call
+          try {
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+              new Notification('New missed call', { body: `From ${log.caller_number}`, icon: '/icon-192.png' });
+            }
+          } catch {}
         })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` },
         (payload) => {
           const log = msgRowToLog(payload.new);
           set((s) => s.smsLog.find(m => m.id === log.id) ? {} : { smsLog: [...s.smsLog, log] });
+          if (log.direction === 'inbound') {
+            try {
+              if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                new Notification('New SMS reply', { body: `${log.from_number}: ${log.body.slice(0, 80)}`, icon: '/icon-192.png' });
+              }
+            } catch {}
+          }
         })
       .subscribe();
   },

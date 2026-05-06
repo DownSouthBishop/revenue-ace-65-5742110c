@@ -42,7 +42,8 @@ async function aiReply(client: any, from: string, transcript: string | null) {
   try {
     const sys = `Write ONE SMS for "${client.business_name}" (${client.industry}) to a missed caller. Warm, professional, urgent. Under 160 chars. End with "Reply STOP to opt out."`;
     const user = `Caller: ${from}. Voicemail: ${transcript || '(none)'}. Booking: ${client.booking_link || 'n/a'}.`;
-    const r = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiUrl = Deno.env.get('AI_GATEWAY_URL') ?? 'https://ai.gateway.lovable.dev/v1/chat/completions';
+    const r = await fetch(aiUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages: [{ role: 'system', content: sys }, { role: 'user', content: user }] }),

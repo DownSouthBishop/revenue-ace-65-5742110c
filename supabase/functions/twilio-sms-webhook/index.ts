@@ -31,7 +31,8 @@ async function aiReply(client: any, from: string, history: { role: string; conte
   if (!apiKey) return null;
   const sys = `You are an SMS assistant for "${client.business_name}" (${client.industry}). Be warm, professional, concise. If the customer wants to book, share: ${client.booking_link || '(no booking link configured)'}. Always under 160 chars. Never include "Reply STOP".`;
   try {
-    const r = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiUrl = Deno.env.get('AI_GATEWAY_URL') ?? 'https://ai.gateway.lovable.dev/v1/chat/completions';
+    const r = await fetch(aiUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'google/gemini-2.5-flash', messages: [{ role: 'system', content: sys }, ...history] }),

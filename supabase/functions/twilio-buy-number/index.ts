@@ -14,9 +14,9 @@ Deno.serve(async (req) => {
     const auth = req.headers.get('Authorization') || '';
     if (!auth.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
     const userSb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } } });
-    const { data: claims } = await userSb.auth.getClaims(auth.replace('Bearer ', ''));
-    if (!claims?.claims) return json({ error: 'Unauthorized' }, 401);
-    const userId = claims.claims.sub as string;
+    const { data: { user }, error: authErr } = await userSb.auth.getUser();
+    if (authErr || !user) return json({ error: 'Unauthorized' }, 401);
+    const userId = user.id;
 
     const { phoneNumber, clientId } = await req.json();
     if (!phoneNumber || !clientId) return json({ error: 'phoneNumber and clientId required' }, 400);

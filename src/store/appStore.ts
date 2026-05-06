@@ -401,7 +401,6 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
       };
       set((s) => ({
         smsLog: [sms, ...s.smsLog],
-        dailyStats: { ...s.dailyStats, smsSent: s.dailyStats.smsSent + 1 },
       }));
 
       // Step 2: Qualification prompt after auto-response

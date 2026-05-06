@@ -3,6 +3,9 @@ import { persist } from 'zustand/middleware';
 import type { Client, CallLog, SmsLog, PhoneNumber, TabId, PageId, AuthMode, QualificationFlow, QualReason, Referral } from '@/types/respondfall';
 import { supabase } from '@/integrations/supabase/client';
 
+const STOP_KEYWORDS = new Set(['STOP', 'STOP.', 'UNSUBSCRIBE', 'CANCEL', 'QUIT']);
+const isStopKeyword = (body: string) => STOP_KEYWORDS.has((body || '').trim().toUpperCase());
+
 // Map a DB row from public.clients to the frontend Client shape
 const rowToClient = (r: any): Client => ({
   id: r.id,

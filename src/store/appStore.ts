@@ -112,9 +112,10 @@ interface AppState {
   configSaved: boolean;
 
   // Actions
-  addClient: (c: Client) => void;
-  deleteClient: (id: string) => void;
-  updateClient: (id: string, data: Partial<Client>) => void;
+  addClient: (c: Omit<Client, 'id'>) => Promise<Client | null>;
+  deleteClient: (id: string) => Promise<void>;
+  updateClient: (id: string, data: Partial<Client>) => Promise<void>;
+  loadClients: () => Promise<void>;
   getActiveClient: () => Client;
 
   simulateCall: () => void;

@@ -255,7 +255,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
           // Browser notification on new missed call
           try {
             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-              new Notification('New missed call', { body: `From ${log.caller_number}`, icon: '/icon-192.png' });
+              new Notification('New missed call', { body: `From ${log.caller_number}`, icon: '/icon-192.png', tag: 'missed-call' });
             }
           } catch {}
         })
@@ -273,7 +273,7 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
           if (log.direction === 'inbound') {
             try {
               if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                new Notification('New SMS reply', { body: `${log.from_number}: ${log.body.slice(0, 80)}`, icon: '/icon-192.png' });
+                new Notification('New SMS reply', { body: `${log.from_number}: ${log.body.slice(0, 80)}`, icon: '/icon-192.png', tag: `sms-${log.from_number}` });
               }
             } catch {}
           }

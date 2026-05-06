@@ -10,6 +10,7 @@ import { SettingsTab } from '@/components/dashboard/SettingsTab';
 import { ConnectTab } from '@/components/dashboard/ConnectTab';
 import { AddClientModal } from '@/components/dashboard/AddClientModal';
 import { ConfirmDeleteModal } from '@/components/dashboard/ConfirmDeleteModal';
+import { enablePushNotifications } from '@/components/dashboard/SystemHealth';
 import type { TabId } from '@/types/respondfall';
 
 const TABS: { id: TabId; label: string; mobileLabel: string }[] = [

@@ -109,6 +109,23 @@ async function processMissed(sb: any, client: any, from: string, callSid: string
     return;
   }
 
+  // Tier enforcement (monthly quota by subscription)
+  let tierPeriodStart: string | null = null;
+  if (client.owner_id) {
+    const d = new Date();
+    tierPeriodStart = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString();
+    const { data: subRow } = await sb.from('subscriptions').select('tier, status').eq('user_id', client.owner_id).maybeSingle();
+    const tier = (subRow && ['active','trialing'].includes(subRow.status)) ? subRow.tier : 'free';
+    const tierCaps: Record<string, number> = { free: 50, starter: 1000, growth: 5000, agency: 50000 };
+    const monthCap = tierCaps[tier] ?? 50;
+    const { data: usage } = await sb.from('usage_counters').select('count')
+      .eq('user_id', client.owner_id).eq('metric', 'sms_sent').eq('period_start', tierPeriodStart).maybeSingle();
+    if ((usage?.count ?? 0) >= monthCap) {
+      await sb.from('system_health').upsert({ client_id: client.id, last_error: `Monthly tier cap reached (${tier}: ${monthCap})` }, { onConflict: 'client_id' });
+      return;
+    }
+  }
+
   let body = await aiReply(client, from, transcript);
   if (!body) {
     body = tplVars(client.sms_template || 'Hey, sorry we missed you! Reply STOP.', {

@@ -642,6 +642,23 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
   sendReply: (phone, text) => {
     if (!text.trim()) return;
     const c = get().getActiveClient();
+    if (get().optOuts.includes(phone)) {
+      const blocked: SmsLog = {
+        id: 's' + Date.now(),
+        direction: 'outbound',
+        from_number: c.twilio_phone_number,
+        to_number: phone,
+        body: '[SMS blocked — this number has opted out]',
+        status: 'blocked',
+        sent_at: new Date().toISOString(),
+        step: 'blocked',
+      };
+      set((s) => ({
+        smsLog: [...s.smsLog, blocked],
+        replyTexts: { ...s.replyTexts, [phone]: '' },
+      }));
+      return;
+    }
     const sms: SmsLog = {
       id: 's' + Date.now(),
       direction: 'outbound',

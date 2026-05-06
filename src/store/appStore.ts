@@ -379,7 +379,6 @@ export const useAppStore = create<AppState>()(persist((set, get) => ({
 
     set((s) => ({
       callLogs: [newCall, ...s.callLogs],
-      dailyStats: { ...s.dailyStats, missed: s.dailyStats.missed + 1 },
     }));
 
     // Step 1: Initial auto-response

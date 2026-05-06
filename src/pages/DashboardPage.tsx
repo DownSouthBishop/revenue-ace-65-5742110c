@@ -32,6 +32,24 @@ export default function DashboardPage() {
 
   const client = clients.find(c => c.id === activeClientId) || clients[0];
   const [stats30, setStats30] = useState({ missed: 0, smsSent: 0, missedToday: 0, smsToday: 0 });
+  const [showNotifBanner, setShowNotifBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    const dismissed = localStorage.getItem('notif-dismissed') === '1';
+    if (!dismissed && Notification.permission === 'default') {
+      setShowNotifBanner(true);
+    }
+  }, []);
+
+  const handleEnableNotifs = async () => {
+    await enablePushNotifications();
+    setShowNotifBanner(false);
+  };
+  const dismissNotifBanner = () => {
+    localStorage.setItem('notif-dismissed', '1');
+    setShowNotifBanner(false);
+  };
 
   useEffect(() => {
     if (!activeClientId) return;

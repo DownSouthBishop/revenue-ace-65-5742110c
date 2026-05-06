@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
+import LegalPage from "./pages/LegalPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -18,7 +19,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/terms" element={<LegalPage kind="terms" />} />
+          <Route path="/privacy" element={<LegalPage kind="privacy" />} />
+          <Route path="/sms-consent" element={<LegalPage kind="consent" />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
@@ -27,3 +30,4 @@ const App = () => (
 );
 
 export default App;
+

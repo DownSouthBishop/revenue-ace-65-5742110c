@@ -18,7 +18,6 @@ export interface Client {
   twilio_number_sid?: string;
 }
 
-
 export interface CallLog {
   id: string;
   caller_number: string;
@@ -78,6 +77,14 @@ export interface Conversation {
   intents: string[];
 }
 
-export type TabId = 'activity' | 'inbox' | 'sequences' | 'analytics' | 'referrals' | 'billing' | 'config' | 'connect';
+export type TabId =
+  | 'activity'
+  | 'inbox'
+  | 'sequences'
+  | 'analytics'
+  | 'referrals'
+  | 'billing'
+  | 'config'
+  | 'connect';
 export type PageId = 'auth' | 'onboard' | 'dashboard';
 export type AuthMode = 'signin' | 'signup' | 'magic';

@@ -17,15 +17,39 @@ export function BillingTab() {
 
   useEffect(() => {
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setLoading(false); return; }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setLoading(false);
+        return;
+      }
       const startOfMonth = new Date();
-      startOfMonth.setUTCDate(1); startOfMonth.setUTCHours(0, 0, 0, 0);
+      startOfMonth.setUTCDate(1);
+      startOfMonth.setUTCHours(0, 0, 0, 0);
       const [{ data: s }, { data: u }] = await Promise.all([
-        supabase.from('subscriptions').select('tier, status, current_period_end').eq('user_id', session.user.id).maybeSingle(),
-        supabase.from('usage_counters').select('count').eq('user_id', session.user.id).eq('metric', 'sms_sent').gte('period_start', startOfMonth.toISOString()).maybeSingle(),
+        supabase
+          .from('subscriptions')
+          .select('tier, status, current_period_end')
+          .eq('user_id', session.user.id)
+          .maybeSingle(),
+        supabase
+          .from('usage_counters')
+          .select('count')
+          .eq('user_id', session.user.id)
+          .eq('metric', 'sms_sent')
+          .gte('period_start', startOfMonth.toISOString())
+          .maybeSingle(),
       ]);
-      setSub(s ? { tier: (s.tier as Tier) ?? 'free', status: s.status ?? 'active', current_period_end: s.current_period_end } : { tier: 'free', status: 'active', current_period_end: null });
+      setSub(
+        s
+          ? {
+              tier: (s.tier as Tier) ?? 'free',
+              status: s.status ?? 'active',
+              current_period_end: s.current_period_end,
+            }
+          : { tier: 'free', status: 'active', current_period_end: null }
+      );
       setUsage(u?.count ?? 0);
       setLoading(false);
     })();
@@ -37,14 +61,21 @@ export function BillingTab() {
   const upgrade = async (tier: Tier) => {
     setRedirecting(tier);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error('Please sign in first'); setRedirecting(null); return; }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in first');
+        setRedirecting(null);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: { tier, returnUrl: window.location.origin },
       });
       if (error || !data?.url) {
         toast.error(error?.message || data?.error || 'Checkout unavailable');
-        setRedirecting(null); return;
+        setRedirecting(null);
+        return;
       }
       window.location.href = data.url;
     } catch (e) {
@@ -61,7 +92,8 @@ export function BillingTab() {
       });
       if (error || !data?.url) {
         toast.error(error?.message || data?.error || 'Billing portal unavailable');
-        setRedirecting(null); return;
+        setRedirecting(null);
+        return;
       }
       window.location.href = data.url;
     } catch (e) {
@@ -81,11 +113,17 @@ export function BillingTab() {
       {/* Current plan + usage */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <div className="bg-s1 border border-blue rounded-xl p-5">
-          <div className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] mb-2">Current Plan</div>
+          <div className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] mb-2">
+            Current Plan
+          </div>
           <div className="font-display text-[26px] font-bold text-sky">{currentTier.label}</div>
-          <div className="text-[12px] font-mono text-t3 mt-1">{currentTier.price} · status: {sub?.status}</div>
+          <div className="text-[12px] font-mono text-t3 mt-1">
+            {currentTier.price} · status: {sub?.status}
+          </div>
           {sub?.current_period_end && (
-            <div className="text-[11px] font-mono text-t3 mt-1">Renews {new Date(sub.current_period_end).toLocaleDateString()}</div>
+            <div className="text-[11px] font-mono text-t3 mt-1">
+              Renews {new Date(sub.current_period_end).toLocaleDateString()}
+            </div>
           )}
           {isPaid && (
             <button
@@ -98,10 +136,20 @@ export function BillingTab() {
           )}
         </div>
         <div className="bg-s1 border border-blue rounded-xl p-5">
-          <div className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] mb-2">SMS Usage · This Month</div>
-          <div className="font-display text-[26px] font-bold text-foreground">{usage.toLocaleString()} <span className="text-t3 text-base font-mono">/ {currentTier.smsPerMonth.toLocaleString()}</span></div>
+          <div className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] mb-2">
+            SMS Usage · This Month
+          </div>
+          <div className="font-display text-[26px] font-bold text-foreground">
+            {usage.toLocaleString()}{' '}
+            <span className="text-t3 text-base font-mono">
+              / {currentTier.smsPerMonth.toLocaleString()}
+            </span>
+          </div>
           <div className="h-2 bg-s3 rounded-full overflow-hidden mt-3">
-            <div className={`h-full ${usagePct >= 90 ? 'bg-destructive' : usagePct >= 70 ? 'bg-ember' : 'gradient-sky'}`} style={{ width: `${usagePct}%` }} />
+            <div
+              className={`h-full ${usagePct >= 90 ? 'bg-destructive' : usagePct >= 70 ? 'bg-ember' : 'gradient-sky'}`}
+              style={{ width: `${usagePct}%` }}
+            />
           </div>
           <div className="text-[11px] font-mono text-t3 mt-2">{usagePct}% used</div>
         </div>
@@ -126,11 +174,16 @@ export function BillingTab() {
               </tr>
             </thead>
             <tbody>
-              {TIERS.map(t => {
+              {TIERS.map((t) => {
                 const isCurrent = sub?.tier === t.id;
-                const isUpgrade = TIERS.findIndex(x => x.id === t.id) > TIERS.findIndex(x => x.id === (sub?.tier ?? 'free'));
+                const isUpgrade =
+                  TIERS.findIndex((x) => x.id === t.id) >
+                  TIERS.findIndex((x) => x.id === (sub?.tier ?? 'free'));
                 return (
-                  <tr key={t.id} className={`border-t border-[hsl(var(--border-light))] ${isCurrent ? 'bg-sky-dim' : ''}`}>
+                  <tr
+                    key={t.id}
+                    className={`border-t border-[hsl(var(--border-light))] ${isCurrent ? 'bg-sky-dim' : ''}`}
+                  >
                     <td className="py-3 pr-3 font-display font-bold text-foreground">{t.label}</td>
                     <td className="py-3 pr-3 font-mono">{t.price}</td>
                     <td className="py-3 pr-3 font-mono">{t.smsPerMonth.toLocaleString()}</td>
@@ -157,7 +210,10 @@ export function BillingTab() {
             </tbody>
           </table>
         </div>
-        <div className="text-[11px] font-mono text-t3 mt-4">All paid plans include AI-generated replies, your dedicated Respondfall number, and full inbox access.</div>
+        <div className="text-[11px] font-mono text-t3 mt-4">
+          All paid plans include AI-generated replies, your dedicated Respondfall number, and full
+          inbox access.
+        </div>
       </div>
     </div>
   );

@@ -21,7 +21,7 @@ export function ConnectTab({ client }: { client: Client }) {
   const [source, setSource] = useState('iphone');
   const [carrier, setCarrier] = useState('att');
   const [copied, setCopied] = useState('');
-  const car = CARRIERS.find(c => c.id === carrier) || CARRIERS[0];
+  const car = CARRIERS.find((c) => c.id === carrier) || CARRIERS[0];
 
   const digits = client.twilio_phone_number.replace(/\D/g, '');
   const dialCode = car.code.replace(/XXXXXXXXXX/g, digits.substring(1));
@@ -35,11 +35,18 @@ export function ConnectTab({ client }: { client: Client }) {
   return (
     <div>
       <div className="bg-s1 border border-blue rounded-xl p-4 sm:p-5 mb-3.5">
-        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Your Respondfall Number</div>
+        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5">
+          <span className="w-[3px] h-4 gradient-indicator rounded-sm" />
+          Your Respondfall Number
+        </div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-3 border border-success rounded-[10px] p-3.5 px-4 gap-3">
           <div>
-            <div className="font-mono text-lg font-semibold text-success">{client.twilio_phone_number}</div>
-            <div className="text-[11px] font-mono text-t3 mt-0.5">Respondfall Infrastructure · Managed for you</div>
+            <div className="font-mono text-lg font-semibold text-success">
+              {client.twilio_phone_number}
+            </div>
+            <div className="text-[11px] font-mono text-t3 mt-0.5">
+              Respondfall Infrastructure · Managed for you
+            </div>
           </div>
           <button
             className="bg-s2 border border-blue-2 rounded-lg text-t2 text-[11px] font-mono px-3.5 py-2 cursor-pointer hover:text-sky hover:border-primary transition-all self-start"
@@ -50,7 +57,8 @@ export function ConnectTab({ client }: { client: Client }) {
         </div>
         {client.forward_from_number && (
           <div className="mt-3 bg-sky-dim border border-blue-2 rounded-lg p-3 text-xs text-t2 leading-relaxed">
-            <strong className="text-sky">Your Business Number:</strong> {client.forward_from_number} → missed calls forward to {client.twilio_phone_number}
+            <strong className="text-sky">Your Business Number:</strong> {client.forward_from_number}{' '}
+            → missed calls forward to {client.twilio_phone_number}
           </div>
         )}
       </div>
@@ -59,9 +67,14 @@ export function ConnectTab({ client }: { client: Client }) {
       <ActivateCallForwarding client={client} copyText={copyText} copied={copied} />
 
       <div className="bg-s1 border border-blue rounded-xl p-4 sm:p-5 mb-3.5">
-        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Twilio Webhook URL</div>
+        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5">
+          <span className="w-[3px] h-4 gradient-indicator rounded-sm" />
+          Twilio Webhook URL
+        </div>
         <div className="text-[12px] text-t2 mb-2.5 leading-relaxed">
-          Paste this URL into your Twilio phone number's <strong className="text-sky">"A CALL COMES IN"</strong> webhook (HTTP POST) so missed calls trigger your SMS sequence.
+          Paste this URL into your Twilio phone number's{' '}
+          <strong className="text-sky">"A CALL COMES IN"</strong> webhook (HTTP POST) so missed
+          calls trigger your SMS sequence.
         </div>
         {(() => {
           const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/twilio-webhook?client_id=${client.id}&stage=initial`;
@@ -71,23 +84,31 @@ export function ConnectTab({ client }: { client: Client }) {
               onClick={() => copyText(url, 'webhook')}
             >
               <span className="break-all">{url}</span>
-              <span className="text-[10px] text-t3 flex-shrink-0">{copied === 'webhook' ? '✓ copied' : 'tap to copy'}</span>
+              <span className="text-[10px] text-t3 flex-shrink-0">
+                {copied === 'webhook' ? '✓ copied' : 'tap to copy'}
+              </span>
             </div>
           );
         })()}
         <div className="text-[11px] text-t3 font-mono mt-2 leading-relaxed">
-          In Twilio Console → Phone Numbers → your number → Voice & Fax → A Call Comes In → set to <strong>Webhook</strong>, paste URL, method <strong>HTTP POST</strong>.
+          In Twilio Console → Phone Numbers → your number → Voice & Fax → A Call Comes In → set to{' '}
+          <strong>Webhook</strong>, paste URL, method <strong>HTTP POST</strong>.
         </div>
       </div>
 
       <div className="bg-s1 border border-blue rounded-xl p-4 sm:p-5">
-        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Conditional Call Forwarding Setup</div>
+        <div className="font-display text-base font-bold tracking-[.05em] mb-4 flex items-center gap-2.5">
+          <span className="w-[3px] h-4 gradient-indicator rounded-sm" />
+          Conditional Call Forwarding Setup
+        </div>
         <div className="bg-sky-dim border border-blue-2 rounded-lg p-3 text-xs text-t2 mb-4 leading-relaxed border-l-[3px] border-l-primary">
-          Your phone still rings normally. <strong className="text-sky">Only missed calls forward</strong> to your Respondfall number.
+          Your phone still rings normally.{' '}
+          <strong className="text-sky">Only missed calls forward</strong> to your Respondfall
+          number.
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 mb-4">
-          {SOURCES.map(s => (
+          {SOURCES.map((s) => (
             <div
               key={s.id}
               onClick={() => setSource(s.id)}
@@ -98,7 +119,11 @@ export function ConnectTab({ client }: { client: Client }) {
               }`}
             >
               <div className="text-xl mb-1">{s.i}</div>
-              <div className={`text-[10px] sm:text-[11px] font-mono tracking-[.06em] ${source === s.id ? 'text-sky' : 'text-t2'}`}>{s.l}</div>
+              <div
+                className={`text-[10px] sm:text-[11px] font-mono tracking-[.06em] ${source === s.id ? 'text-sky' : 'text-t2'}`}
+              >
+                {s.l}
+              </div>
             </div>
           ))}
         </div>
@@ -106,51 +131,68 @@ export function ConnectTab({ client }: { client: Client }) {
         {(source === 'iphone' || source === 'android') && (
           <>
             <div className="flex gap-1.5 flex-wrap mb-3.5">
-              {CARRIERS.map(cr => (
+              {CARRIERS.map((cr) => (
                 <button
                   key={cr.id}
                   onClick={() => setCarrier(cr.id)}
                   className={`py-1.5 px-3 rounded-md border text-[11px] font-mono cursor-pointer transition-all ${
-                    carrier === cr.id ? 'border-primary text-sky bg-sky-dim' : 'border-blue text-t3 bg-transparent'
+                    carrier === cr.id
+                      ? 'border-primary text-sky bg-sky-dim'
+                      : 'border-blue text-t3 bg-transparent'
                   }`}
                 >
                   {cr.name}
                 </button>
               ))}
             </div>
-            <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">Open Phone app and dial this code:</label>
+            <label className="text-[10px] font-mono text-t3 uppercase tracking-[.1em] block mb-1.5">
+              Open Phone app and dial this code:
+            </label>
             <div
               className="bg-background border border-blue-2 rounded-lg p-3 font-mono text-[13px] text-sky cursor-pointer flex justify-between items-center gap-3 my-2 hover:border-primary hover:shadow-[0_0_12px_hsl(var(--sky-dim))] transition-all"
               onClick={() => copyText(dialCode, 'code')}
             >
               <span className="break-all">{dialCode}</span>
-              <span className="text-[10px] text-t3 flex-shrink-0">{copied === 'code' ? '✓ copied' : 'tap to copy'}</span>
+              <span className="text-[10px] text-t3 flex-shrink-0">
+                {copied === 'code' ? '✓ copied' : 'tap to copy'}
+              </span>
             </div>
-            <div className="text-[11px] text-t3 font-mono mt-2">To disable forwarding: <strong>{car.off}</strong></div>
+            <div className="text-[11px] text-t3 font-mono mt-2">
+              To disable forwarding: <strong>{car.off}</strong>
+            </div>
             <div className="bg-success-bg border border-success rounded-lg p-2.5 text-xs text-success mt-3 leading-relaxed">
-              ✓ After dialing, you'll hear a confirmation tone. Missed calls will now route through Respondfall and trigger your SMS sequence automatically.
+              ✓ After dialing, you'll hear a confirmation tone. Missed calls will now route through
+              Respondfall and trigger your SMS sequence automatically.
             </div>
           </>
         )}
 
         {source === 'google' && (
           <div className="text-[13px] text-t2 leading-loose">
-            <strong className="text-foreground">voice.google.com</strong> → Settings → Calls → Call Forwarding → Add <span className="text-sky font-mono">{client.twilio_phone_number}</span> → 20 second ring time.
+            <strong className="text-foreground">voice.google.com</strong> → Settings → Calls → Call
+            Forwarding → Add{' '}
+            <span className="text-sky font-mono">{client.twilio_phone_number}</span> → 20 second
+            ring time.
           </div>
         )}
         {source === 'landline' && (
           <div className="text-[13px] text-t2 leading-loose">
-            Pick up handset → dial <span className="text-sky font-mono">*92 {client.twilio_phone_number}</span> → 2 beeps = forwarding active.
+            Pick up handset → dial{' '}
+            <span className="text-sky font-mono">*92 {client.twilio_phone_number}</span> → 2 beeps =
+            forwarding active.
           </div>
         )}
         {source === 'ringcentral' && (
           <div className="text-[13px] text-t2 leading-loose">
-            <strong>app.ringcentral.com</strong> → Admin Portal → Phone System → Users → Call Handling → "If no one answers" → Forward to <span className="text-sky font-mono">{client.twilio_phone_number}</span>.
+            <strong>app.ringcentral.com</strong> → Admin Portal → Phone System → Users → Call
+            Handling → "If no one answers" → Forward to{' '}
+            <span className="text-sky font-mono">{client.twilio_phone_number}</span>.
           </div>
         )}
         {source === 'openphone' && (
           <div className="text-[13px] text-t2 leading-loose">
-            OpenPhone → Settings → your number → Call Forwarding → "When unavailable" → enter <span className="text-sky font-mono">{client.twilio_phone_number}</span>.
+            OpenPhone → Settings → your number → Call Forwarding → "When unavailable" → enter{' '}
+            <span className="text-sky font-mono">{client.twilio_phone_number}</span>.
           </div>
         )}
       </div>
@@ -158,7 +200,15 @@ export function ConnectTab({ client }: { client: Client }) {
   );
 }
 
-function ActivateCallForwarding({ client, copyText, copied }: { client: Client; copyText: (t: string, l: string) => void; copied: string }) {
+function ActivateCallForwarding({
+  client,
+  copyText,
+  copied,
+}: {
+  client: Client;
+  copyText: (t: string, l: string) => void;
+  copied: string;
+}) {
   const [tab, setTab] = useState<'iphone' | 'android' | 'carrier'>('iphone');
   const num = client.twilio_phone_number;
   const digits = num.replace(/\D/g, '');
@@ -167,9 +217,13 @@ function ActivateCallForwarding({ client, copyText, copied }: { client: Client; 
   if (!num) {
     return (
       <div className="bg-s1 border border-blue rounded-xl p-4 sm:p-5 mb-3.5">
-        <div className="font-display text-base font-bold tracking-[.05em] mb-3 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Activate Call Forwarding</div>
+        <div className="font-display text-base font-bold tracking-[.05em] mb-3 flex items-center gap-2.5">
+          <span className="w-[3px] h-4 gradient-indicator rounded-sm" />
+          Activate Call Forwarding
+        </div>
         <div className="bg-ember-dim border border-ember rounded-lg p-3 text-xs text-t2 leading-relaxed border-l-[3px] border-l-accent">
-          Claim a Respondfall number first (in Settings) — then come back here for one-tap forwarding instructions.
+          Claim a Respondfall number first (in Settings) — then come back here for one-tap
+          forwarding instructions.
         </div>
       </div>
     );
@@ -177,10 +231,17 @@ function ActivateCallForwarding({ client, copyText, copied }: { client: Client; 
 
   return (
     <div className="bg-s1 border border-blue rounded-xl p-4 sm:p-5 mb-3.5">
-      <div className="font-display text-base font-bold tracking-[.05em] mb-3 flex items-center gap-2.5"><span className="w-[3px] h-4 gradient-indicator rounded-sm" />Activate Call Forwarding</div>
-      <div className="font-display text-[15px] font-semibold text-foreground mb-1.5">How to forward your calls</div>
+      <div className="font-display text-base font-bold tracking-[.05em] mb-3 flex items-center gap-2.5">
+        <span className="w-[3px] h-4 gradient-indicator rounded-sm" />
+        Activate Call Forwarding
+      </div>
+      <div className="font-display text-[15px] font-semibold text-foreground mb-1.5">
+        How to forward your calls
+      </div>
       <div className="text-[13px] text-t2 leading-relaxed mb-3">
-        We use <strong className="text-sky">conditional forwarding</strong> — your phone still rings first. Only when you don't answer does the call forward to Respondfall, so we can text the caller back automatically.
+        We use <strong className="text-sky">conditional forwarding</strong> — your phone still rings
+        first. Only when you don't answer does the call forward to Respondfall, so we can text the
+        caller back automatically.
       </div>
 
       <div className="flex items-center gap-2 mb-3 bg-3 border border-blue-2 rounded-lg p-2.5">
@@ -195,7 +256,7 @@ function ActivateCallForwarding({ client, copyText, copied }: { client: Client; 
       </div>
 
       <div className="flex gap-1.5 mb-3.5">
-        {(['iphone', 'android', 'carrier'] as const).map(t => (
+        {(['iphone', 'android', 'carrier'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -216,7 +277,9 @@ function ActivateCallForwarding({ client, copyText, copied }: { client: Client; 
               className="inline-flex items-center gap-2 bg-3 border border-blue-2 rounded px-2 py-0.5 font-mono text-sky cursor-pointer hover:border-primary"
             >
               {iphoneCode}
-              <span className="text-[10px] text-t3">{copied === 'ipcode' ? '✓' : 'tap to copy'}</span>
+              <span className="text-[10px] text-t3">
+                {copied === 'ipcode' ? '✓' : 'tap to copy'}
+              </span>
             </span>
           </li>
           <li>Tap Call — you'll hear a confirmation tone</li>
@@ -235,7 +298,9 @@ function ActivateCallForwarding({ client, copyText, copied }: { client: Client; 
               className="inline-flex items-center gap-2 bg-3 border border-blue-2 rounded px-2 py-0.5 font-mono text-sky cursor-pointer hover:border-primary"
             >
               {num}
-              <span className="text-[10px] text-t3">{copied === 'andnum' ? '✓' : 'tap to copy'}</span>
+              <span className="text-[10px] text-t3">
+                {copied === 'andnum' ? '✓' : 'tap to copy'}
+              </span>
             </span>
           </li>
           <li>Save. Done.</li>
@@ -244,7 +309,8 @@ function ActivateCallForwarding({ client, copyText, copied }: { client: Client; 
 
       {tab === 'carrier' && (
         <div className="text-[13px] text-t2 leading-relaxed">
-          Call your carrier and ask them to set up <strong className="text-sky">"conditional call forwarding (no answer)"</strong> to:{' '}
+          Call your carrier and ask them to set up{' '}
+          <strong className="text-sky">"conditional call forwarding (no answer)"</strong> to:{' '}
           <span
             onClick={() => copyText(num, 'carnum')}
             className="inline-flex items-center gap-2 bg-3 border border-blue-2 rounded px-2 py-0.5 font-mono text-sky cursor-pointer hover:border-primary"
@@ -252,7 +318,9 @@ function ActivateCallForwarding({ client, copyText, copied }: { client: Client; 
             {num}
             <span className="text-[10px] text-t3">{copied === 'carnum' ? '✓' : 'tap to copy'}</span>
           </span>
-          <div className="text-[12px] text-t3 mt-2">Takes about 5 minutes with any major carrier.</div>
+          <div className="text-[12px] text-t3 mt-2">
+            Takes about 5 minutes with any major carrier.
+          </div>
         </div>
       )}
     </div>

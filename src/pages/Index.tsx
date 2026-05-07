@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import { useAppStore } from '@/store/appStore';
 import { supabase } from '@/integrations/supabase/client';
 import AuthPage from '@/pages/AuthPage';
@@ -6,13 +7,13 @@ import OnboardPage from '@/pages/OnboardPage';
 import DashboardPage from '@/pages/DashboardPage';
 
 const Index = () => {
-  const page = useAppStore(s => s.page);
-  const setPage = useAppStore(s => s.setPage);
-  const loadClients = useAppStore(s => s.loadClients);
+  const page = useAppStore((s) => s.page);
+  const setPage = useAppStore((s) => s.setPage);
+  const loadClients = useAppStore((s) => s.loadClients);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const handleSession = async (session: any) => {
+    const handleSession = async (session: Session | null) => {
       if (!session) {
         useAppStore.setState({ clients: [], activeClientId: '' });
         setPage('auth');

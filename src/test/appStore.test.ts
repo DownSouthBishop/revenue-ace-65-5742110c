@@ -1,8 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Build a chainable mock that resolves to { data: null, error: null } for any await.
-const okThenable = () => {
-  const chain: any = {
+// Build a chainable mock that resolves to { data: [], error: null } for any await.
+type ChainResult = { data: unknown[]; error: null };
+interface MockChain extends PromiseLike<ChainResult> {
+  select: () => MockChain;
+  insert: () => MockChain;
+  update: () => MockChain;
+  delete: () => MockChain;
+  eq: () => MockChain;
+  in: () => MockChain;
+  order: () => MockChain;
+  limit: () => MockChain;
+  maybeSingle: () => MockChain;
+  single: () => MockChain;
+}
+const okThenable = (): MockChain => {
+  const chain: MockChain = {
     select: () => chain,
     insert: () => chain,
     update: () => chain,
@@ -13,7 +26,8 @@ const okThenable = () => {
     limit: () => chain,
     maybeSingle: () => chain,
     single: () => chain,
-    then: (resolve: (v: any) => any) => Promise.resolve({ data: [], error: null }).then(resolve),
+    then: <T>(resolve: (v: ChainResult) => T) =>
+      Promise.resolve({ data: [], error: null }).then(resolve),
   };
   return chain;
 };
@@ -22,7 +36,9 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn(() => okThenable()),
     auth: { getSession: vi.fn(async () => ({ data: { session: null } })) },
-    channel: vi.fn(() => ({ on: () => ({ on: () => ({ on: () => ({ subscribe: () => ({}) }) }) }) })),
+    channel: vi.fn(() => ({
+      on: () => ({ on: () => ({ on: () => ({ subscribe: () => ({}) }) }) }),
+    })),
     removeChannel: vi.fn(),
     functions: { invoke: vi.fn(async () => ({ data: null, error: null })) },
   },
@@ -32,16 +48,30 @@ import { useAppStore, isStopKeyword } from '@/store/appStore';
 import type { Client, CallLog, SmsLog } from '@/types/respondfall';
 
 const fakeClient: Client = {
-  id: 'c1', name: 'Acme', business_type: 'plumbing', twilio_phone_number: '+15550000001',
-  forward_from_number: '+15550000002', sms_template: 'hi', avg_job_value: 300,
-  blackout_start: 22, blackout_end: 7, send_delay_seconds: 5,
-  booking_link: '', google_review_link: '', is_active: true,
+  id: 'c1',
+  name: 'Acme',
+  business_type: 'plumbing',
+  twilio_phone_number: '+15550000001',
+  forward_from_number: '+15550000002',
+  sms_template: 'hi',
+  avg_job_value: 300,
+  blackout_start: 22,
+  blackout_end: 7,
+  send_delay_seconds: 5,
+  booking_link: '',
+  google_review_link: '',
+  is_active: true,
 };
 
 beforeEach(() => {
   useAppStore.setState({
-    clients: [fakeClient], activeClientId: 'c1',
-    callLogs: [], smsLog: [], optOuts: [], replyTexts: {}, reviewsSent: {},
+    clients: [fakeClient],
+    activeClientId: 'c1',
+    callLogs: [],
+    smsLog: [],
+    optOuts: [],
+    replyTexts: {},
+    reviewsSent: {},
   });
 });
 
@@ -77,12 +107,21 @@ describe('sendReply', () => {
 describe('deleteActivityItem', () => {
   it('removes the matching call and message from local state', async () => {
     const call: CallLog = {
-      id: 'call-1', caller_number: '+15550003333', call_status: 'no-answer',
-      received_at: new Date().toISOString(), voicemail: false, voicemail_transcript: null,
+      id: 'call-1',
+      caller_number: '+15550003333',
+      call_status: 'no-answer',
+      received_at: new Date().toISOString(),
+      voicemail: false,
+      voicemail_transcript: null,
     };
     const sms: SmsLog = {
-      id: 'sms-1', direction: 'outbound', from_number: '+1', to_number: '+15550003333',
-      body: 'hi', status: 'sent', sent_at: new Date().toISOString(),
+      id: 'sms-1',
+      direction: 'outbound',
+      from_number: '+1',
+      to_number: '+15550003333',
+      body: 'hi',
+      status: 'sent',
+      sent_at: new Date().toISOString(),
     };
     useAppStore.setState({ callLogs: [call], smsLog: [sms] });
     await useAppStore.getState().deleteActivityItem('call-1');
@@ -97,10 +136,17 @@ describe('opt-out detection from inbound STOP via reload', () => {
   it('populates optOuts when smsLog contains an inbound STOP', () => {
     // Simulate what loadActivityForClient computes after fetch
     const inbound: SmsLog = {
-      id: 's2', direction: 'inbound', from_number: '+15550004444', to_number: '+1',
-      body: 'STOP', status: 'received', sent_at: new Date().toISOString(),
+      id: 's2',
+      direction: 'inbound',
+      from_number: '+15550004444',
+      to_number: '+1',
+      body: 'STOP',
+      status: 'received',
+      sent_at: new Date().toISOString(),
     };
-    const optOuts = [inbound].filter(m => m.direction === 'inbound' && isStopKeyword(m.body)).map(m => m.from_number);
+    const optOuts = [inbound]
+      .filter((m) => m.direction === 'inbound' && isStopKeyword(m.body))
+      .map((m) => m.from_number);
     expect(optOuts).toEqual(['+15550004444']);
   });
 });

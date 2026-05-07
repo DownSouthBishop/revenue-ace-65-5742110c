@@ -261,7 +261,7 @@ export const SettingsTab = forwardRef<HTMLDivElement, { client: Client }>(functi
             {(() => {
               const previewText = template
                 .replace(/{business_name}/g, client.name)
-                .replace(/{booking_link}/g, client.booking_link || 'https://book.example.com')
+                .replace(/{booking_link}/g, client.booking_link || 'https://book.yourbusiness.com')
                 .replace(/{caller_number}/g, '+1 (555) 000-0000')
                 .replace(
                   /{time}/g,

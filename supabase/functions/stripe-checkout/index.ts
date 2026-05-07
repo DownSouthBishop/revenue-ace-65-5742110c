@@ -50,8 +50,8 @@ Deno.serve(async (req) => {
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: PRICE_IDS[tier]!, quantity: 1 }],
-      success_url: `${returnUrl || 'https://example.com'}?checkout=success`,
-      cancel_url: `${returnUrl || 'https://example.com'}?checkout=cancelled`,
+      success_url: `${returnUrl || req.headers.get('origin') || 'https://respondfall.com'}?checkout=success`,
+      cancel_url: `${returnUrl || req.headers.get('origin') || 'https://respondfall.com'}?checkout=cancelled`,
       metadata: { user_id: userId, tier },
       subscription_data: { metadata: { user_id: userId, tier } },
     });

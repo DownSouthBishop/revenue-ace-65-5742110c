@@ -11,29 +11,29 @@ export interface TierInfo {
 }
 
 export const TIERS: TierInfo[] = [
-  { id: 'free', label: 'Free', price: '$0', smsPerMonth: 50, clients: 1, aiReplies: false },
+  { id: 'free', label: 'Free', price: '$0', smsPerMonth: 20, clients: 1, aiReplies: false },
   {
     id: 'starter',
     label: 'Starter',
-    price: '$49/mo',
-    smsPerMonth: 1000,
+    price: '$29/mo',
+    smsPerMonth: 150,
     clients: 1,
     aiReplies: true,
   },
   {
     id: 'growth',
     label: 'Growth',
-    price: '$149/mo',
-    smsPerMonth: 5000,
-    clients: 5,
+    price: '$79/mo',
+    smsPerMonth: 500,
+    clients: 3,
     aiReplies: true,
   },
   {
     id: 'agency',
     label: 'Agency',
-    price: '$497/mo',
-    smsPerMonth: 50000,
-    clients: 50,
+    price: '$249/mo',
+    smsPerMonth: 2000,
+    clients: 25,
     aiReplies: true,
   },
 ];

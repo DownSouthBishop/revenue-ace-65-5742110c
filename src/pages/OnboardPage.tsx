@@ -235,7 +235,7 @@ export default function OnboardPage() {
                 <div className="bg-ember-dim border border-ember rounded-lg p-3 text-[12px] text-t2 mb-4 leading-relaxed border-l-[3px] border-l-accent flex items-center justify-between gap-3">
                   <div>
                     A Respondfall number routes missed calls automatically. Included on all paid
-                    plans from <strong className="text-ember">$49/mo</strong>.
+                    plans from <strong className="text-ember">$29/mo</strong>.
                   </div>
                   <button
                     onClick={() => {

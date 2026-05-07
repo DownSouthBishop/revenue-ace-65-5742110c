@@ -12,10 +12,10 @@ export interface TierLimits {
 }
 
 export const TIER_LIMITS: Record<Tier, TierLimits> = {
-  free:    { smsPerMonth: 50,    clients: 1,  phoneNumbers: 1,  aiReplies: false },
-  starter: { smsPerMonth: 1000,  clients: 1,  phoneNumbers: 1,  aiReplies: true  },
-  growth:  { smsPerMonth: 5000,  clients: 5,  phoneNumbers: 5,  aiReplies: true  },
-  agency:  { smsPerMonth: 50000, clients: 50, phoneNumbers: 50, aiReplies: true  },
+  free:    { smsPerMonth: 20,   clients: 1,  phoneNumbers: 1,  aiReplies: false },
+  starter: { smsPerMonth: 150,  clients: 1,  phoneNumbers: 1,  aiReplies: true  },
+  growth:  { smsPerMonth: 500,  clients: 3,  phoneNumbers: 3,  aiReplies: true  },
+  agency:  { smsPerMonth: 2000, clients: 25, phoneNumbers: 25, aiReplies: true  },
 };
 
 export function adminClient(): SupabaseClient {

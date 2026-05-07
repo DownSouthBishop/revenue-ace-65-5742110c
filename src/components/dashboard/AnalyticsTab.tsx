@@ -8,6 +8,7 @@ interface Stats30 {
   smsSent: number;
   missedToday: number;
   smsToday: number;
+  confirmed: number;
 }
 
 export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Stats30 }) {
@@ -15,7 +16,9 @@ export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Sta
   const [stats7, setStats7] = useState({ missed: 0, sms: 0 });
   const m30 = stats30.missed;
   const s30 = stats30.smsSent;
+  const confirmed30 = stats30.confirmed;
   const rev30 = m30 * client.avg_job_value;
+  const revConfirmed = confirmed30 * client.avg_job_value;
 
   useEffect(() => {
     if (!client.id) return;
@@ -93,6 +96,28 @@ export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Sta
         </div>
       )}
 
+      {/* Confirmed Revenue Recovered */}
+      <div className="bg-s1 border border-success rounded-[14px] p-5 mb-3.5 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-success" />
+        <div className="text-[10px] font-mono text-t3 tracking-[.1em] uppercase mb-1">
+          Confirmed Revenue Recovered · Last 30 Days
+        </div>
+        <div className="font-display text-[36px] font-bold text-success leading-none">
+          ${revConfirmed.toLocaleString()}
+        </div>
+        <div className="text-xs text-t2 mt-1.5">
+          {confirmed30} job{confirmed30 !== 1 ? 's' : ''} marked complete × ${client.avg_job_value} avg
+          {m30 > 0 && (
+            <span className="text-t3">
+              {' '}· {Math.round((confirmed30 / m30) * 100)}% close rate
+            </span>
+          )}
+        </div>
+        <div className="text-[11px] font-mono text-t3 mt-2">
+          Mark a job complete in Inbox → revenue logs here automatically
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 mb-3.5">
         {[
           { l: '7-Day Missed', v: String(stats7.missed), cls: 'text-sky' },
@@ -126,6 +151,9 @@ export function AnalyticsTab({ client, stats30 }: { client: Client; stats30: Sta
           </div>
           <strong className="text-foreground">Last 30 days:</strong> {m30} missed calls · {s30} SMS
           sent · <strong className="text-ember">${rev30.toLocaleString()} protected</strong>
+          {confirmed30 > 0 && (
+            <> · <strong className="text-success">${revConfirmed.toLocaleString()} confirmed recovered</strong></>
+          )}
           <br />
           <span className="text-t3 text-[11px]">
             Respondfall AI ·{' '}

@@ -49,7 +49,7 @@ export default function DashboardPage() {
   } = useAppStore();
 
   const client = clients.find((c) => c.id === activeClientId) || clients[0];
-  const [stats30, setStats30] = useState({ missed: 0, smsSent: 0, missedToday: 0, smsToday: 0 });
+  const [stats30, setStats30] = useState({ missed: 0, smsSent: 0, missedToday: 0, smsToday: 0, confirmed: 0 });
   const [showNotifBanner, setShowNotifBanner] = useState(false);
   const [tier, setTier] = useState<Tier>('free');
 
@@ -135,12 +135,19 @@ export default function DashboardPage() {
         .eq('client_id', activeClientId)
         .eq('direction', 'outbound')
         .gte('sent_at', sinceToday.toISOString()),
-    ]).then(([a, b, c, d]) =>
+      supabase
+        .from('conversations')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', activeClientId)
+        .eq('appt_confirmed', true)
+        .gte('last_reply_at', since30),
+    ]).then(([a, b, c, d, e]) =>
       setStats30({
         missed: a.count ?? 0,
         smsSent: b.count ?? 0,
         missedToday: c.count ?? 0,
         smsToday: d.count ?? 0,
+        confirmed: e.count ?? 0,
       })
     );
   }, [activeClientId, smsLog.length]);

@@ -605,6 +605,12 @@ export const useAppStore = create<AppState>()(
           smsLog: [...s.smsLog, sms],
           reviewsSent: { ...s.reviewsSent, [phone]: true },
         }));
+        await supabase
+          .from('conversations')
+          .upsert(
+            { client_id: get().activeClientId, caller_number: phone, appt_confirmed: true },
+            { onConflict: 'client_id,caller_number' }
+          );
         const { error } = await supabase.functions.invoke('send-manual-sms', {
           body: { clientId: get().activeClientId, to: phone, body: msg },
         });

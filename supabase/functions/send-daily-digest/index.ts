@@ -2,7 +2,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get('APP_URL') ?? 'https://app.respondfall.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -78,6 +78,11 @@ function renderHtml(opts: {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  if (cronSecret) {
+    const provided = req.headers.get('x-cron-secret') ?? req.headers.get('authorization')?.replace('Bearer ', '');
+    if (provided !== cronSecret) return new Response('Forbidden', { status: 403, headers: corsHeaders });
+  }
 
   const apiKey = Deno.env.get('RESEND_API_KEY');
   if (!apiKey) {

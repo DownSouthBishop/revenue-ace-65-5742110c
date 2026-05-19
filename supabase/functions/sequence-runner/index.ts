@@ -1,7 +1,7 @@
 // Cron-triggered: process due scheduled_messages with TCPA/blackout/opt-out/cap guards.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const cors = { 'Access-Control-Allow-Origin': '*' };
+const cors = { 'Access-Control-Allow-Origin': Deno.env.get('APP_URL') ?? 'https://app.respondfall.com' };
 
 function hourInTZ(tz: string, d = new Date()) {
   try { return parseInt(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: tz }).format(d), 10); }
@@ -30,6 +30,11 @@ async function sendSms(from: string, to: string, body: string) {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  if (cronSecret) {
+    const provided = req.headers.get('x-cron-secret') ?? req.headers.get('authorization')?.replace('Bearer ', '');
+    if (provided !== cronSecret) return new Response('Forbidden', { status: 403, headers: cors });
+  }
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const nowIso = new Date().toISOString();
   const { data: due } = await sb.from('scheduled_messages').select('*').eq('status', 'pending').lte('send_at', nowIso).limit(50);

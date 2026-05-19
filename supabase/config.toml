@@ -21,7 +21,7 @@ verify_jwt = false
 schedule = "0 8 * * *"
 
 [functions.send-onboard-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
